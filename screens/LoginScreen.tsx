@@ -1,12 +1,18 @@
 // screens/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, Image, Switch, StyleSheet
-} from 'react-native';
+  Image,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
-  const [id, setId] = useState('');
-  const [password, setPassword] = useState('');
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
 
   return (
@@ -32,9 +38,9 @@ export default function LoginScreen() {
       <Text style={styles.or}>or</Text>
 
       <View style={styles.socialRow}>
-        <Image source={require('../assets/google.png')} style={styles.icon} />
-        <Image source={require('../assets/naver.png')} style={styles.icon} />
-        <Image source={require('../assets/kakao.png')} style={styles.icon} />
+        <Image source={require("../assets/images/google.png")} style={styles.icon} />
+        <Image source={require("../assets/imgaes/naver.png")} style={styles.icon} />
+        <Image source={require("../assets/images/kakao.png")} style={styles.icon} />
       </View>
 
       <Text style={styles.linkRow}>아이디 찾기 | 비밀번호 찾기 | 회원가입</Text>
@@ -43,7 +49,7 @@ export default function LoginScreen() {
         <Switch
           value={remember}
           onValueChange={setRemember}
-          thumbColor={remember ? '#4F46E5' : '#ccc'}
+          thumbColor={remember ? "#4F46E5" : "#ccc"}
         />
         <Text style={styles.rememberText}>로그인 상태 유지</Text>
       </View>
@@ -58,63 +64,63 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 30,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   logo: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 40,
-    color: '#4F46E5',
+    color: "#4F46E5",
   },
   input: {
-    width: '100%',
+    width: "100%",
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
     marginBottom: 20,
     fontSize: 16,
     paddingVertical: 8,
   },
   or: {
     marginVertical: 16,
-    color: '#999',
+    color: "#999",
   },
   socialRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 16,
     marginBottom: 16,
   },
   icon: {
     width: 40,
     height: 40,
-    resizeMode: 'contain',
+    resizeMode: "contain",
   },
   linkRow: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
     marginBottom: 20,
   },
   rememberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
   },
   rememberText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#444',
+    color: "#444",
   },
   loginButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: "#4F46E5",
     paddingVertical: 12,
     paddingHorizontal: 60,
     borderRadius: 8,
   },
   loginButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
   },
 });
