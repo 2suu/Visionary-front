@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { View } from 'react-native';
+// app/index.tsx
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import LoginScreen from '../../screens/LoginScreen';
-import HomeScreen from '../(tabs)/index'; // 기존 홈 화면 불러오기
+import HomeScreen from '../(tabs)/index';
 
 export default function Index() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       {isLoggedIn ? (
         <HomeScreen />
       ) : (
@@ -16,3 +17,9 @@ export default function Index() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
