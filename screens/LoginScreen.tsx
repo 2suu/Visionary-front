@@ -1,5 +1,4 @@
-// screens/LoginScreen.tsx
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -8,11 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 
-export default function LoginScreen() {
-  const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
+type LoginProps = {
+  onLoginSuccess: () => void;
+};
+
+export default function LoginScreen({ onLoginSuccess }: LoginProps) {
+  const [id, setId] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
 
   return (
@@ -38,9 +41,9 @@ export default function LoginScreen() {
       <Text style={styles.or}>or</Text>
 
       <View style={styles.socialRow}>
-        <Image source={require("../assets/images/google.png")} style={styles.icon} />
-        <Image source={require("../assets/imgaes/naver.png")} style={styles.icon} />
-        <Image source={require("../assets/images/kakao.png")} style={styles.icon} />
+        <Image source={require('../assets/images/google.png')} style={styles.icon} />
+        <Image source={require('../assets/images/naver.png')} style={styles.icon} />
+        <Image source={require('../assets/images/kakao.png')} style={styles.icon} />
       </View>
 
       <Text style={styles.linkRow}>아이디 찾기 | 비밀번호 찾기 | 회원가입</Text>
@@ -49,12 +52,12 @@ export default function LoginScreen() {
         <Switch
           value={remember}
           onValueChange={setRemember}
-          thumbColor={remember ? "#4F46E5" : "#ccc"}
+          thumbColor={remember ? '#4F46E5' : '#ccc'}
         />
         <Text style={styles.rememberText}>로그인 상태 유지</Text>
       </View>
 
-      <TouchableOpacity style={styles.loginButton}>
+      <TouchableOpacity style={styles.loginButton} onPress={onLoginSuccess}>
         <Text style={styles.loginButtonText}>로그인</Text>
       </TouchableOpacity>
     </View>
