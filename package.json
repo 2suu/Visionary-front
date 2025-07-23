@@ -1,5 +1,5 @@
 {
-  "name": "visionary-app",
+  "name": "visionary-front",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {

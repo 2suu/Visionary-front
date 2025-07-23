@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "visionary-app",
-    "slug": "visionary-app",
+    "name": "Visionary-front",
+    "slug": "Visionary-front",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "visionaryapp",
+    "scheme": "visionaryfront",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
