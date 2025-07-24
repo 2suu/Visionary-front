@@ -13,11 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-type LoginScreenProps = {
-  onLoginSuccess: () => void;
-};
-
-export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export default function LoginScreen() {
   const router = useRouter();
   const [id, setId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -25,7 +21,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
   const handleLogin = () => {
     console.log('로그인 버튼 클릭!');
-    onLoginSuccess(); // Index.tsx 에서 isLoggedIn = true 로 설정됨
+    router.replace('/(tabs)'); 
   };
 
   return (
@@ -54,7 +50,6 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
         <Text style={styles.or}>or</Text>
 
-        {/* ✅ 소셜 로그인 버튼들 */}
         <View style={styles.socialRow}>
           <TouchableOpacity onPress={() => console.log('Google 로그인')}>
             <Image source={require('../assets/images/google.png')} style={styles.icon} />
@@ -67,7 +62,6 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </TouchableOpacity>
         </View>
 
-        {/* ✅ 아이디/비번/회원가입 링크 */}
         <View style={styles.linkRowContainer}>
           <TouchableOpacity onPress={() => router.push('/find-id')}>
             <Text style={styles.linkText}>아이디 찾기</Text>
@@ -78,7 +72,7 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
           </TouchableOpacity>
           <Text style={styles.separator}>|</Text>
           <TouchableOpacity onPress={() => router.push('/signup')}>
-            <Text style={[styles.linkText]}>회원가입</Text>
+            <Text style={styles.linkText}>회원가입</Text>
           </TouchableOpacity>
         </View>
 

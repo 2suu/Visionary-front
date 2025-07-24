@@ -7,19 +7,13 @@ export default function SignUpCompleteScreen() {
   const { nickname } = useLocalSearchParams<{ nickname?: string }>();
 
   useEffect(() => {
-    // 자동 로그인 처리 후 홈으로 전환
-    const timeout = setTimeout(() => {
-      // TODO: 로그인 상태 저장 로직 (ex: Zustand, AsyncStorage 등)
-
-      router.replace('/(tabs)'); // 홈 화면으로 이동
-    }, 2000); // 2초 후 자동 이동
-
-    return () => clearTimeout(timeout);
-  }, []);
+    // 회원가입 완료 즉시 홈화면으로 이동
+    router.replace('/(tabs)');
+  }, [router]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>👍</Text>
+      <Text style={styles.emoji}>🎉</Text>
       <Text style={styles.completeText}>회원가입 완료</Text>
       <Text style={styles.welcomeText}>
         {nickname ? `${nickname}님\n반가워요!` : '반가워요!'}
