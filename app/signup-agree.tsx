@@ -1,14 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  Alert,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function SignUpAgreeScreen() {
   const [agreeAll, setAgreeAll] = useState(false);
@@ -17,7 +17,15 @@ export default function SignUpAgreeScreen() {
   const [terms3, setTerms3] = useState(false); // 선택
 
   const router = useRouter();
-  const { nickname, userId, password, name, rrn, tel } = useLocalSearchParams<{
+
+  const {
+    nickname,
+    userId,
+    password,
+    name,
+    rrn,
+    tel,
+  } = useLocalSearchParams<{
     nickname?: string;
     userId?: string;
     password?: string;
@@ -40,12 +48,30 @@ export default function SignUpAgreeScreen() {
       return;
     }
 
-    console.log('가입 정보:', { nickname, userId, password, name, rrn, tel });
+    const isValid =
+      nickname?.trim() &&
+      userId?.trim() &&
+      password?.trim() &&
+      name?.trim() &&
+      rrn?.trim() &&
+      tel?.trim();
 
-    // 회원가입 완료 페이지로 이동
+    if (!isValid) {
+      Alert.alert('입력 오류', '회원가입 정보가 누락되었습니다.');
+      return;
+    }
+
+    // 모든 회원가입 정보를 signup-complete로 전달
     router.push({
       pathname: '/signup-complete',
-      params: { nickname },
+      params: {
+        nickname,
+        userId,
+        password,
+        name,
+        rrn,
+        tel,
+      },
     });
   };
 

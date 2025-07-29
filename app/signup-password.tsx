@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUpPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -35,10 +35,6 @@ export default function SignUpPasswordScreen() {
       Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
       return;
     }
-
-    console.log('닉네임:', nickname);
-    console.log('아이디:', userId);
-    console.log('비밀번호:', password);
 
     // ✅ 다음 단계(본인확인)로 이동
     router.push({

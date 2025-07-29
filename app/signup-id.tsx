@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useGlobalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { useRouter, useGlobalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUpIdScreen() {
   const [userId, setUserId] = useState('');
@@ -29,9 +29,6 @@ export default function SignUpIdScreen() {
       Alert.alert('알림', '아이디를 입력해주세요!');
       return;
     }
-
-    console.log('닉네임:', nickname);
-    console.log('아이디:', userId);
 
     // ✅ 비밀번호 입력 화면으로 이동
     router.push({

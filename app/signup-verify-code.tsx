@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
@@ -33,15 +33,21 @@ export default function SignUpVerifyCodeScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timer > 0) {
-      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
-    } else {
-      setExpired(true);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
+ useEffect(() => {
+  const interval = setInterval(() => {
+    setTimer((prev) => {
+      if (prev <= 1) {
+        clearInterval(interval);
+        setExpired(true);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
 
   const formatTime = () => {
     const m = String(Math.floor(timer / 60)).padStart(2, '0');
@@ -49,25 +55,33 @@ export default function SignUpVerifyCodeScreen() {
     return `${m}:${s}`;
   };
 
-  const handleVerify = () => {
-    if (!code) {
-      Alert.alert('오류', '인증번호를 입력해주세요.');
-      return;
-    }
+const handleVerify = () => {
+  if (!code) {
+    Alert.alert('오류', '인증번호를 입력해주세요.');
+    return;
+  }
 
-    if (expired) {
-      Alert.alert('시간 초과', '인증 시간이 초과되었습니다.');
-      return;
-    }
+  if (expired) {
+    Alert.alert('시간 초과', '인증 시간이 초과되었습니다.');
+    return;
+  }
 
-    // TODO: 서버에 인증번호 확인 요청
+  // TODO: 서버에 인증번호 확인 요청
 
-    Alert.alert('성공', '인증이 완료되었습니다.');
-    router.push({
-      pathname: '/signup-agree',
-      params: { nickname, userId, password, name, rrn, tel },
-    });
-  };
+  Alert.alert('성공', '인증이 완료되었습니다.');
+  router.push({
+    pathname: '/signup-agree',
+    params: {
+      nickname,
+      userId,
+      password,
+      name,
+      rrn,
+      tel,
+    },
+  });
+};
+
 
   return (
     <KeyboardAvoidingView

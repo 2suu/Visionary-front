@@ -1,24 +1,29 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function SignUpCompleteScreen() {
-  const router = useRouter();
   const { nickname } = useLocalSearchParams<{ nickname?: string }>();
 
   useEffect(() => {
-    // 회원가입 완료 즉시 홈화면으로 이동
-    router.replace('/(tabs)');
-  }, [router]);
+    if (!nickname) {
+      router.replace('/signup');
+    } else {
+      const timeout = setTimeout(() => {
+        router.replace('/(tabs)'); // ✅ 홈탭으로 자동 이동
+      }, 2000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [nickname]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>🎉</Text>
+      <Text style={styles.emoji}>👍</Text>
       <Text style={styles.completeText}>회원가입 완료</Text>
       <Text style={styles.welcomeText}>
-        {nickname ? `${nickname}님\n반가워요!` : '반가워요!'}
+        {nickname ? `${nickname}님 반가워요!` : ''}
       </Text>
-      <Text style={styles.infoText}>홈으로 이동 중...</Text>
     </View>
   );
 }
@@ -26,28 +31,23 @@ export default function SignUpCompleteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 100,
-    paddingHorizontal: 24,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: 24,
   },
   emoji: {
     fontSize: 100,
-    marginBottom: 24,
+    marginBottom: 30,
   },
   completeText: {
-    fontSize: 16,
-    color: '#999',
-    marginBottom: 8,
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 10,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#888',
+    color: '#333',
   },
 });
