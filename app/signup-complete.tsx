@@ -7,10 +7,10 @@ export default function SignUpCompleteScreen() {
 
   useEffect(() => {
     if (!nickname) {
-      router.replace('/signup');
+      router.replace('/(tabs)/home');
     } else {
       const timeout = setTimeout(() => {
-        router.replace('/(tabs)'); // ✅ 홈탭으로 자동 이동
+        router.replace('/(tabs)/home'); // ✅ 홈탭으로 자동 이동
       }, 2000);
 
       return () => clearTimeout(timeout);
