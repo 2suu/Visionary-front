@@ -1,6 +1,9 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -8,21 +11,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [id, setId] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [remember, setRemember] = useState<boolean>(false);
 
-  const handleLogin = () => {
-    console.log('로그인 버튼 클릭!');
-    router.replace('/(tabs)'); 
-  };
+const handleLogin = () => {
+  console.log('로그인 시도:', userId, password);
+  router.replace('/(tabs)/home');
+};
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -35,8 +35,8 @@ export default function LoginScreen() {
         <TextInput
           placeholder="아이디"
           style={styles.input}
-          value={id}
-          onChangeText={setId}
+          value={userId}
+          onChangeText={setUserId}
           placeholderTextColor="#aaa"
         />
         <TextInput

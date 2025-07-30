@@ -2,34 +2,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
-export default function SignUpIdScreen() {
-  const [userId, setUserId] = useState('');
+export default function SignUpPasswordScreen() {
   const router = useRouter();
-  const { nickname } = useLocalSearchParams<{ nickname?: string }>();
+  const { nickname, userId } = useLocalSearchParams<{
+    nickname?: string;
+    userId?: string;
+  }>();
 
-  const handleConfirm = () => {
-    if (!userId.trim()) {
-      Alert.alert('알림', '아이디를 입력해주세요!');
+  const [password, setPassword] = useState('');
+
+  const handleNext = () => {
+    if (!password.trim()) {
+      Alert.alert('알림', '비밀번호를 입력해주세요!');
       return;
     }
 
     console.log('닉네임:', nickname);
     console.log('아이디:', userId);
+    console.log('비밀번호:', password);
 
-    // 다음 단계 (비밀번호 입력 화면)으로 이동
+    // 다음 화면(본인 확인)으로 이동
     router.push({
-      pathname: '/signup-password',
-      params: { nickname, userId },
+      pathname: '/signup-verify',
+      params: { nickname, userId, password },
     });
   };
 
@@ -43,20 +48,20 @@ export default function SignUpIdScreen() {
       </TouchableOpacity>
 
       <View style={styles.textContainer}>
-        <Text style={styles.title}>좋아요!</Text>
-        <Text style={styles.subtitle}>이제 사용할 아이디를 정해주세요</Text>
+        <Text style={styles.title}>마지막 단계예요!</Text>
+        <Text style={styles.subtitle}>비밀번호를 설정해주세요</Text>
       </View>
 
       <TextInput
         style={styles.input}
-        placeholder="아이디"
-        value={userId}
-        onChangeText={setUserId}
+        placeholder="비밀번호"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
         placeholderTextColor="#aaa"
-        autoCapitalize="none"
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleConfirm}>
+      <TouchableOpacity style={styles.button} onPress={handleNext}>
         <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>

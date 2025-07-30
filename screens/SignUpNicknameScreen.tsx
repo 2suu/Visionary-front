@@ -1,35 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
-export default function SignUpIdScreen() {
-  const [userId, setUserId] = useState('');
+const SignUpNicknameScreen: React.FC = () => {
+  const [nickname, setNickname] = useState('');
   const router = useRouter();
-  const { nickname } = useLocalSearchParams<{ nickname?: string }>();
 
   const handleConfirm = () => {
-    if (!userId.trim()) {
-      Alert.alert('알림', '아이디를 입력해주세요!');
+    if (!nickname.trim()) {
+      Alert.alert('알림', '닉네임을 입력해주세요!');
       return;
     }
 
-    console.log('닉네임:', nickname);
-    console.log('아이디:', userId);
-
-    // 다음 단계 (비밀번호 입력 화면)으로 이동
+    console.log('입력된 닉네임:', nickname);
     router.push({
-      pathname: '/signup-password',
-      params: { nickname, userId },
+      pathname: '/signup-id',
+      params: { nickname },
     });
   };
 
@@ -43,17 +39,16 @@ export default function SignUpIdScreen() {
       </TouchableOpacity>
 
       <View style={styles.textContainer}>
-        <Text style={styles.title}>좋아요!</Text>
-        <Text style={styles.subtitle}>이제 사용할 아이디를 정해주세요</Text>
+        <Text style={styles.title}>안녕하세요!</Text>
+        <Text style={styles.subtitle}>사용할 닉네임을 알려주세요</Text>
       </View>
 
       <TextInput
         style={styles.input}
-        placeholder="아이디"
-        value={userId}
-        onChangeText={setUserId}
+        placeholder="닉네임"
         placeholderTextColor="#aaa"
-        autoCapitalize="none"
+        value={nickname}
+        onChangeText={setNickname}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleConfirm}>
@@ -61,7 +56,9 @@ export default function SignUpIdScreen() {
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
-}
+};
+
+export default SignUpNicknameScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -80,7 +77,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    fontFamily: 'SUIT-Bold',
+    fontFamily: 'SUIT-Bold', // SUIT 폰트 적용
   },
   subtitle: {
     fontSize: 16,
