@@ -2,12 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function SignUpAgreeScreen() {
@@ -38,9 +38,12 @@ export default function SignUpAgreeScreen() {
       return;
     }
 
-    Alert.alert('🎉 회원가입 완료', `${nickname}님 반가워요!`);
-    router.replace('/(tabs)/home');
-  };
+  // 회원가입 완료 화면으로 이동
+    router.push({
+      pathname: '/signup-complete',
+      params: { nickname },
+    });
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
