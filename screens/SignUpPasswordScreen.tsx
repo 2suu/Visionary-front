@@ -1,25 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; // Zustand import
 
 export default function SignUpPasswordScreen() {
   const router = useRouter();
-  const { nickname, userId } = useLocalSearchParams<{
-    nickname?: string;
-    userId?: string;
-  }>();
-
+  const { nickname, userId, setField } = useSignUpStore(); // Zustand에서 값 가져오기
   const [password, setPassword] = useState('');
+
+  // 이전 단계 확인
+  useEffect(() => {
+    if (!nickname || !userId) {
+      Alert.alert('잘못된 접근', '닉네임 또는 아이디가 없습니다.');
+      router.replace('/signup-nickname'); // 시작 화면으로 보내기
+    }
+  }, []);
 
   const handleNext = () => {
     if (!password.trim()) {
@@ -27,15 +32,11 @@ export default function SignUpPasswordScreen() {
       return;
     }
 
-    console.log('닉네임:', nickname);
-    console.log('아이디:', userId);
-    console.log('비밀번호:', password);
+    // ✅ Zustand에 비밀번호 저장
+    setField('password', password);
 
-    // 다음 화면(본인 확인)으로 이동
-    router.push({
-      pathname: '/signup-verify',
-      params: { nickname, userId, password },
-    });
+    // ✅ 다음 단계로 이동 (약관 동의 화면)
+    router.push('/signup-agree');
   };
 
   return (

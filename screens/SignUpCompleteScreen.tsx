@@ -1,20 +1,43 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore';
 
 export default function SignUpCompleteScreen() {
-  const { nickname } = useLocalSearchParams<{ nickname?: string }>();
+  const router = useRouter();
+  const {
+    nickname,
+    userId,
+    password,
+    name,
+    rrn,
+    tel,
+    carrier,
+    reset,
+  } = useSignUpStore();
 
   useEffect(() => {
-    if (!nickname) {
-      router.replace('/(tabs)/home');
-    } else {
-      const timeout = setTimeout(() => {
-        router.replace('/(tabs)/home');
-      }, 2000);
-      return () => clearTimeout(timeout);
-    }
-  }, [nickname]);
+    const register = async () => {
+      try {
+        // ✅ API 요청
+        // await axios.post('https://your-api.com/api/auth/signup', {nickname,userId, password, name, rrn, tel, carrier,});
+
+        Alert.alert('🎉 가입 완료', `${nickname}님 환영합니다!`);
+
+        // ✅ 2초 후 홈 이동
+        setTimeout(() => {
+          reset(); // 상태 초기화
+          router.replace('/(tabs)/home');
+        }, 2000);
+      } catch (error) {
+        console.error('회원가입 실패:', error);
+        Alert.alert('오류', '회원가입에 실패했습니다.');
+        router.replace('/login');
+      }
+    };
+
+    register();
+  }, []);
 
   return (
     <View style={styles.container}>

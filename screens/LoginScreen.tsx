@@ -71,7 +71,7 @@ const handleLogin = () => {
             <Text style={styles.linkText}>비밀번호 찾기</Text>
           </TouchableOpacity>
           <Text style={styles.separator}>|</Text>
-          <TouchableOpacity onPress={() => router.push('/signup')}>
+          <TouchableOpacity onPress={() => router.push('/signup-verify')}>
             <Text style={styles.linkText}>회원가입</Text>
           </TouchableOpacity>
         </View>

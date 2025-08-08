@@ -1,25 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; //Zustand import
 
 export default function SignUpVerifyScreen() {
   const router = useRouter();
-  const { nickname, userId, password } = useLocalSearchParams<{
-    nickname?: string;
-    userId?: string;
-    password?: string;
-  }>();
+  const { setField } = useSignUpStore(); //Zustand setter
 
   const [name, setName] = useState('');
   const [rrn, setRrn] = useState('');
@@ -47,10 +44,12 @@ export default function SignUpVerifyScreen() {
       return;
     }
 
-    router.push({
-      pathname: '/signup-verify-code',
-      params: { nickname, userId, password, name, rrn, tel, carrier },
-    });
+    setField('name', name);
+    setField('rrn', rrn);
+    setField('tel', tel);
+    setField('carrier', carrier);
+
+    router.push('/signup-verify-code');
   };
 
   return (
