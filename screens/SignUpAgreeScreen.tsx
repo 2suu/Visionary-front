@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -9,17 +9,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; // Zustand import
 
 export default function SignUpAgreeScreen() {
   const router = useRouter();
-  const { nickname, userId, password, name, rrn, tel } = useLocalSearchParams<{
-    nickname?: string;
-    userId?: string;
-    password?: string;
-    name?: string;
-    rrn?: string;
-    tel?: string;
-  }>();
+  const { nickname } = useSignUpStore(); // 전역 상태에서 닉네임 가져옴
 
   const [agreeAll, setAgreeAll] = useState(false);
   const [agreeService, setAgreeService] = useState(false);
@@ -38,12 +32,9 @@ export default function SignUpAgreeScreen() {
       return;
     }
 
-  // 회원가입 완료 화면으로 이동
-    router.push({
-      pathname: '/signup-complete',
-      params: { nickname },
-    });
-};
+    // 회원가입 완료 화면으로 이동 (params 제거)
+    router.push('/signup-complete');
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

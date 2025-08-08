@@ -1,38 +1,34 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; //Zustand import
 
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
-  const { nickname, userId, password, name, rrn, tel } = useLocalSearchParams<{
-    nickname?: string;
-    userId?: string;
-    password?: string;
-    name?: string;
-    rrn?: string;
-    tel?: string;
-  }>();
+  const { name, rrn, tel, setField } = useSignUpStore(); // 값 가져오기
 
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(180);
   const [expired, setExpired] = useState(false);
 
+  // 값 없으면 뒤로 보내기
   useEffect(() => {
-    if (!nickname || !userId || !password || !name || !rrn || !tel) {
+    if (!name || !rrn || !tel) {
       Alert.alert('잘못된 접근', '이전 단계 정보가 없습니다.');
-      router.replace('/signup');
+      router.replace('/signup-verify');
     }
   }, []);
 
+  // ⏱️ 3분 타이머
   useEffect(() => {
     const interval = setInterval(() => {
       setTimer((prev) => {
@@ -65,17 +61,9 @@ export default function SignUpVerifyCodeScreen() {
     }
 
     Alert.alert('성공', '인증이 완료되었습니다.');
-    router.push({
-      pathname: '/signup-agree',
-      params: {
-        nickname,
-        userId,
-        password,
-        name,
-        rrn,
-        tel,
-      },
-    });
+
+    // 다음 화면으로 이동 (닉네임 화면)
+    router.push('/signup-nickname');
   };
 
   return (

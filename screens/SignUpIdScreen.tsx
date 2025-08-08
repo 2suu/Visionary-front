@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,11 +11,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; //Zustand import
 
 export default function SignUpIdScreen() {
   const [userId, setUserId] = useState('');
   const router = useRouter();
-  const { nickname } = useLocalSearchParams<{ nickname?: string }>();
+  const { nickname, setField } = useSignUpStore(); //Zustand 값 가져오기
+
+  useEffect(() => {
+    if (!nickname) {
+      Alert.alert('잘못된 접근', '닉네임이 없습니다.');
+      router.replace('/signup-nickname'); // 뒤로 보내기
+    }
+  }, []);
 
   const handleConfirm = () => {
     if (!userId.trim()) {
@@ -23,14 +31,11 @@ export default function SignUpIdScreen() {
       return;
     }
 
-    console.log('닉네임:', nickname);
-    console.log('아이디:', userId);
+    // Zustand에 아이디 저장
+    setField('userId', userId);
 
-    // 다음 단계 (비밀번호 입력 화면)으로 이동
-    router.push({
-      pathname: '/signup-password',
-      params: { nickname, userId },
-    });
+    //다음 화면으로 이동
+    router.push('/signup-password');
   };
 
   return (

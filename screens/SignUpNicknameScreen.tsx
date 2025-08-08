@@ -2,19 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useSignUpStore } from '../stores/useSignUpStore'; // Zustand import
 
 const SignUpNicknameScreen: React.FC = () => {
   const [nickname, setNickname] = useState('');
   const router = useRouter();
+  const { setField } = useSignUpStore(); // Zustand setter
 
   const handleConfirm = () => {
     if (!nickname.trim()) {
@@ -22,11 +24,11 @@ const SignUpNicknameScreen: React.FC = () => {
       return;
     }
 
-    console.log('입력된 닉네임:', nickname);
-    router.push({
-      pathname: '/signup-id',
-      params: { nickname },
-    });
+    // Zustand에 저장
+    setField('nickname', nickname);
+
+    // 다음 화면으로 이동
+    router.push('/signup-id');
   };
 
   return (
@@ -77,7 +79,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    fontFamily: 'SUIT-Bold', // SUIT 폰트 적용
+    fontFamily: 'SUIT-Bold',
   },
   subtitle: {
     fontSize: 16,
