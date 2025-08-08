@@ -79,7 +79,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 60,
-    backgroundColor: '#F7F6FB',
+    backgroundColor: '#F5F5F5',
   },
   heroContainer: {
     alignItems: 'center',
