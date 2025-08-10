@@ -1,12 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function HomeScreen() {
@@ -25,7 +26,12 @@ export default function HomeScreen() {
           {/* ▶ 버튼 + 캐릭터 수평 정렬 */}
           <View style={styles.heroRow}>
             <View style={styles.buttonColumn}>
-              <TouchableOpacity style={styles.button}>
+
+               {/* ✅ ‘나’ 탐색하기 → presurvey/intro 로 이동 */}
+              <TouchableOpacity 
+                style={styles.button}
+                onPress={() => router.push('/presurvey/intro')}
+                >
                 <Image
                   source={require('../assets/images/compass.png')}
                   style={styles.icon}
