@@ -6,6 +6,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -53,70 +54,91 @@ export default function SignUpVerifyScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
     >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="chevron-back" size={24} color="#333" />
-      </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // 헤더 높이에 맞게 조정 가능
+      >
+        <View style={styles.content}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#333" />
+          </TouchableOpacity>
 
-      <Text style={styles.title}>본인 확인을 위해 정보를 입력해주세요</Text>
+          <Text style={styles.title}>본인 확인을 위해 정보를 입력해주세요</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="이름"
-        value={name}
-        onChangeText={setName}
-        placeholderTextColor="#aaa"
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="이름"
+            value={name}
+            onChangeText={setName}
+            placeholderTextColor="#aaa"
+            returnKeyType="next"
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="주민등록번호 (예: 010509-4)"
-        value={rrn}
-        onChangeText={(text) => setRrn(formatRRN(text))}
-        keyboardType="numeric"
-        placeholderTextColor="#aaa"
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="주민등록번호 (예: 010509-4)"
+            value={rrn}
+            onChangeText={(text) => setRrn(formatRRN(text))}
+            keyboardType="numeric"
+            placeholderTextColor="#aaa"
+            returnKeyType="next"
+          />
 
-      <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={carrier}
-          onValueChange={(value) => setCarrier(value)}
-          style={styles.picker}
-          dropdownIconColor="#4E41FF"
-        >
-          <Picker.Item label="통신사 선택" value="" />
-          <Picker.Item label="SKT" value="SKT" />
-          <Picker.Item label="KT" value="KT" />
-          <Picker.Item label="LGU+" value="LGU+" />
-          <Picker.Item label="알뜰폰" value="알뜰폰" />
-        </Picker>
-      </View>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={carrier}
+              onValueChange={(value) => setCarrier(value)}
+              style={styles.picker}
+              dropdownIconColor="#4E41FF"
+            >
+              <Picker.Item label="통신사 선택" value="" />
+              <Picker.Item label="SKT" value="SKT" />
+              <Picker.Item label="KT" value="KT" />
+              <Picker.Item label="LGU+" value="LGU+" />
+              <Picker.Item label="알뜰폰" value="알뜰폰" />
+            </Picker>
+          </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="전화번호 (예: 010-1234-5678)"
-        value={tel}
-        onChangeText={(text) => setTel(formatPhone(text))}
-        keyboardType="phone-pad"
-        placeholderTextColor="#aaa"
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="전화번호 (예: 010-1234-5678)"
+            value={tel}
+            onChangeText={(text) => setTel(formatPhone(text))}
+            keyboardType="phone-pad"
+            placeholderTextColor="#aaa"
+            returnKeyType="done"
+          />
 
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
-        <Text style={styles.buttonText}>인증번호 받기</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+          <TouchableOpacity style={styles.button} onPress={handleNext}>
+            <Text style={styles.buttonText}>인증번호 받기</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // ScrollView 전체 컨테이너
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: '#fff',
+  },
+  // KAV 레이아웃
+  kav: {
+    flex: 1,
+  },
+  // 실제 화면 내용 컨테이너
+  content: {
     flex: 1,
     paddingTop: 60,
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
+    paddingBottom: 32,
   },
   backButton: {
     marginBottom: 20,
@@ -135,6 +157,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 24,
     fontFamily: 'SUIT-Regular',
+    color: '#000',
   },
   pickerWrapper: {
     borderBottomWidth: 1,
@@ -143,7 +166,6 @@ const styles = StyleSheet.create({
   },
   picker: {
     fontSize: 16,
-    fontFamily: 'SUIT-Regular',
     color: '#000',
   },
   button: {

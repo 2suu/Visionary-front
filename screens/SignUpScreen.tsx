@@ -1,16 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 const SignUpScreen: React.FC = () => {
   const [nickname, setNickname] = useState<string>('');
@@ -32,6 +33,10 @@ const SignUpScreen: React.FC = () => {
   };
 
   return (
+    <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+    >
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -57,12 +62,18 @@ const SignUpScreen: React.FC = () => {
         <Text style={styles.buttonText}>확인</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
+   </ScrollView>
   );
 };
 
 export default SignUpScreen;
 
 const styles = StyleSheet.create({
+   // ScrollView 전체
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     paddingTop: 60,

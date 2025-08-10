@@ -5,6 +5,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -59,90 +60,100 @@ export default function SignUpPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
     >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="chevron-back" size={24} color="#333" />
-      </TouchableOpacity>
-
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>마지막 단계예요!</Text>
-        <Text style={styles.subtitle}>비밀번호를 설정해주세요</Text>
-      </View>
-
-      {/* 비밀번호 */}
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="비밀번호 (8~16자, 영문/숫자/특수문자 포함)"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-          placeholderTextColor="#aaa"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          onPress={() => setShowPassword((prev) => !prev)}
-          style={styles.eyeButton}
-        >
-          <Ionicons
-            name={showPassword ? 'eye-off' : 'eye'}
-            size={22}
-            color="#666"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* 비밀번호 확인 */}
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="비밀번호 확인"
-          secureTextEntry={!showConfirm}
-          value={confirm}
-          onChangeText={setConfirm}
-          placeholderTextColor="#aaa"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          onPress={() => setShowConfirm((prev) => !prev)}
-          style={styles.eyeButton}
-        >
-          <Ionicons
-            name={showConfirm ? 'eye-off' : 'eye'}
-            size={22}
-            color="#666"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {confirm.length > 0 && !matchOK && (
-        <Text style={styles.error}>비밀번호가 일치하지 않습니다.</Text>
-      )}
-
-      <View style={styles.ruleList}>
-        <RuleItem ok={rules.lengthOK} label="8~16자" />
-        <RuleItem ok={rules.hasLetter} label="영문 포함" />
-        <RuleItem ok={rules.hasNumber} label="숫자 포함" />
-        <RuleItem ok={rules.hasSpecial} label="특수문자 포함" />
-        <RuleItem ok={matchOK} label="비밀번호 일치" />
-      </View>
-
-      <TouchableOpacity
-        style={[
-          styles.button,
-          (!rules.isValid || !matchOK) && styles.buttonDisabled,
-        ]}
-        onPress={handleNext}
-        disabled={!rules.isValid || !matchOK}
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // 헤더 높이에 맞게 조정
       >
-        <Text style={styles.buttonText}>다음</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+        <View style={styles.content}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color="#333" />
+          </TouchableOpacity>
+
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>마지막 단계예요!</Text>
+            <Text style={styles.subtitle}>비밀번호를 설정해주세요</Text>
+          </View>
+
+          {/* 비밀번호 */}
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="비밀번호 (8~16자, 영문/숫자/특수문자 포함)"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              placeholderTextColor="#aaa"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword((prev) => !prev)}
+              style={styles.eyeButton}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={22}
+                color="#666"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* 비밀번호 확인 */}
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="비밀번호 확인"
+              secureTextEntry={!showConfirm}
+              value={confirm}
+              onChangeText={setConfirm}
+              placeholderTextColor="#aaa"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirm((prev) => !prev)}
+              style={styles.eyeButton}
+            >
+              <Ionicons
+                name={showConfirm ? 'eye-off' : 'eye'}
+                size={22}
+                color="#666"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {confirm.length > 0 && !matchOK && (
+            <Text style={styles.error}>비밀번호가 일치하지 않습니다.</Text>
+          )}
+
+          <View style={styles.ruleList}>
+            <RuleItem ok={rules.lengthOK} label="8~16자" />
+            <RuleItem ok={rules.hasLetter} label="영문 포함" />
+            <RuleItem ok={rules.hasNumber} label="숫자 포함" />
+            <RuleItem ok={rules.hasSpecial} label="특수문자 포함" />
+            <RuleItem ok={matchOK} label="비밀번호 일치" />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              (!rules.isValid || !matchOK) && styles.buttonDisabled,
+            ]}
+            onPress={handleNext}
+            disabled={!rules.isValid || !matchOK}
+          >
+            <Text style={styles.buttonText}>다음</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 
@@ -161,18 +172,25 @@ function RuleItem({ ok, label }: { ok: boolean; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  // ScrollView 전체
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: '#fff',
+  },
+  // KAV 레이아웃
+  kav: { flex: 1 },
+  // 실제 콘텐츠 컨테이너
+  content: {
     flex: 1,
     paddingTop: 60,
     paddingHorizontal: 24,
+    paddingBottom: 32,
     backgroundColor: '#fff',
   },
-  backButton: {
-    marginBottom: 20,
-  },
-  textContainer: {
-    marginBottom: 28,
-  },
+
+  backButton: { marginBottom: 20 },
+  textContainer: { marginBottom: 28 },
+
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -185,6 +203,7 @@ const styles = StyleSheet.create({
     fontFamily: 'SUIT-Regular',
     marginTop: 6,
   },
+
   inputWrapper: {
     position: 'relative',
     marginBottom: 12,
@@ -204,6 +223,7 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -12 }],
     padding: 4,
   },
+
   error: {
     color: '#E5484D',
     fontSize: 13,
@@ -211,33 +231,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: 'SUIT-Regular',
   },
-  ruleList: {
-    marginTop: 8,
-    marginBottom: 24,
-  },
-  ruleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  ruleText: {
-    fontSize: 14,
-    color: '#777',
-    fontFamily: 'SUIT-Regular',
-  },
-  ruleTextOk: {
-    color: '#333',
-    fontFamily: 'SUIT-Bold',
-  },
+
+  ruleList: { marginTop: 8, marginBottom: 24 },
+  ruleItem: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  ruleText: { fontSize: 14, color: '#777', fontFamily: 'SUIT-Regular' },
+  ruleTextOk: { color: '#333', fontFamily: 'SUIT-Bold' },
+
   button: {
     backgroundColor: '#4E41FF',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
+  buttonDisabled: { opacity: 0.4 },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
