@@ -8,6 +8,7 @@ type Props = {
   onNext: () => void;
   error?: string | null;
   nextLabel?: string;
+   gapAfterQuestion?: number;
 };
 
 export default function QuestionWrapper({
@@ -46,7 +47,7 @@ export default function QuestionWrapper({
 const PRIMARY = '#4E41FF';
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20 },
+  container: { flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingTop: 13, paddingBottom: 20 },
   content: { flex: 1 },
 
   question: { fontSize: 18, fontWeight: '700', marginTop: 8, marginBottom: 16, color: '#111' },

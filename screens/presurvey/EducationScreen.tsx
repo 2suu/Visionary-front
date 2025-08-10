@@ -26,8 +26,7 @@ export default function EducationScreen() {
     }
     setError(null);
     // TODO: 다음 화면 연결
-    // router.push('/presurvey/experience');
-    router.back(); // 임시 (확인용)
+    router.push('/presurvey/experience');
   };
 
   return (
