@@ -5,6 +5,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -81,6 +82,10 @@ const SignUpNicknameScreen: React.FC = () => {
   };
 
   return (
+    <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -134,12 +139,18 @@ const SignUpNicknameScreen: React.FC = () => {
         <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
+  </ScrollView>
   );
 };
 
 export default SignUpNicknameScreen;
 
 const styles = StyleSheet.create({
+   // ScrollView 전체
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
     paddingTop: 60,
