@@ -1,20 +1,32 @@
+// screens/presurvey/RelationshipScreen.tsx
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
-// import { usePreSurveyStore } from '../../stores/usePreSurveyStore'; // 추후 활성화
+import { ROUTES, useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
-const Q1_OPTIONS = ['없음', '보통', '활발'];
+const Q1_OPTIONS = ['없음', '보통', '활발'] as const;
 const Q2_OPTIONS = [
   { label: '깊고 좁게', emoji: '👥' },
   { label: '넓고 얕게', emoji: '🌐' },
-];
+] as const;
 
 export default function RelationshipScreen() {
-  // const { set } = usePreSurveyStore();
-  const [q1, setQ1] = useState<number | null>(null);
-  const [q2, setQ2] = useState<number | null>(null);
+  const { data, setData } = useSurvey();
+
+  // ✅ Confirm에서 편집으로 들어왔을 때, 저장된 값을 기준으로 초기 선택 복원
+  const initialIdxQ1 = useMemo(
+    () => (data.relationFreq ? Q1_OPTIONS.findIndex((v) => v === data.relationFreq) : -1),
+    [data.relationFreq]
+  );
+  const initialIdxQ2 = useMemo(
+    () => (data.relationStyle ? Q2_OPTIONS.findIndex((v) => v.label === data.relationStyle) : -1),
+    [data.relationStyle]
+  );
+
+  const [q1, setQ1] = useState<number | null>(initialIdxQ1 >= 0 ? initialIdxQ1 : null);
+  const [q2, setQ2] = useState<number | null>(initialIdxQ2 >= 0 ? initialIdxQ2 : null);
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
@@ -24,11 +36,13 @@ export default function RelationshipScreen() {
     }
     setError(null);
 
-    // 추후 Zustand 저장
-    // set({ relationshipFreq: q1, relationshipStyle: q2 });
-    console.log('대인관계 응답:', { q1, q2 });
+    // ✅ Context 저장
+    setData({
+      relationFreq: Q1_OPTIONS[q1],
+      relationStyle: Q2_OPTIONS[q2].label,
+    });
 
-    router.push('/presurvey/mood'); // 다음 화면
+    router.push(ROUTES.mood);
   };
 
   return (
@@ -52,15 +66,8 @@ export default function RelationshipScreen() {
               onPress={() => setQ1(idx)}
               activeOpacity={0.8}
             >
-              <View
-                style={[
-                  styles.circle,
-                  selected && styles.circleSelected,
-                ]}
-              />
-              <Text style={[styles.q1Text, selected && styles.q1TextSelected]}>
-                {label}
-              </Text>
+              <View style={[styles.circle, selected && styles.circleSelected]} />
+              <Text style={[styles.q1Text, selected && styles.q1TextSelected]}>{label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -92,8 +99,7 @@ export default function RelationshipScreen() {
 }
 
 const styles = StyleSheet.create({
-  questionLabel: { fontSize: 15, fontWeight: '600', color: '#111',
-  marginBottom: 14 },
+  questionLabel: { fontSize: 15, fontWeight: '600', color: '#111', marginBottom: 14 },
 
   // Q1: 동그라미 3개 + 라벨
   q1Row: {
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 14,
     paddingHorizontal: 6,
-    marginBottom: 35, 
+    marginBottom: 35,
   },
   q1Item: { alignItems: 'center', gap: 8 },
   circle: {
@@ -112,10 +118,7 @@ const styles = StyleSheet.create({
     borderColor: '#CFCFD6',
     backgroundColor: 'white',
   },
-  circleSelected: {
-    borderColor: PRIMARY,
-    backgroundColor: PRIMARY,
-  },
+  circleSelected: { borderColor: PRIMARY, backgroundColor: PRIMARY },
   q1Text: { fontSize: 13, color: '#4A4A55' },
   q1TextSelected: { color: '#2A2A35', fontWeight: '700' },
 

@@ -1,13 +1,25 @@
 // screens/presurvey/ExperienceScreen.tsx
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
+import { ROUTES, useSurvey } from './survey-context';
 
 type Ans = '예 (경력 있어요)' | '아니오 (경력 없어요)';
 
+const PRIMARY = '#4E41FF';
+
 export default function ExperienceScreen() {
-  const [value, setValue] = useState<Ans | null>(null);
+  const { data, setData } = useSurvey();
+
+  // ✅ 저장된 hasExperience로 초기 선택 복원
+  const initialUi = useMemo<Ans | null>(() => {
+    if (data.hasExperience === true) return '예 (경력 있어요)';
+    if (data.hasExperience === false) return '아니오 (경력 없어요)';
+    return null;
+  }, [data.hasExperience]);
+
+  const [value, setValue] = useState<Ans | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
@@ -16,8 +28,15 @@ export default function ExperienceScreen() {
       return;
     }
     setError(null);
-    if (value.startsWith('예')) router.push('/presurvey/experience-detail');
-    else router.push('/presurvey/economy-saving');
+
+    const yes = value.startsWith('예');
+    setData({
+      hasExperience: yes,
+      // ❗ '아니오' 선택하면 이전 상세 입력을 정리
+      ...(yes ? {} : { experiences: [] }),
+    });
+
+    router.push(yes ? ROUTES.experienceDetail : ROUTES.economySaving);
   };
 
   return (
@@ -45,8 +64,6 @@ export default function ExperienceScreen() {
   );
 }
 
-const PRIMARY = '#4E41FF';
-
 const styles = StyleSheet.create({
   list: { width: '100%', gap: 14, marginTop: 8 },
   card: {
@@ -67,7 +84,7 @@ const styles = StyleSheet.create({
   cardActive: {
     borderColor: PRIMARY,
     shadowOpacity: 0.12,
-    backgroundColor: '#F5F3FF', // 아주 옅은 보라
+    backgroundColor: '#F5F3FF',
   },
   emoji: { fontSize: 18 },
   emojiActive: { transform: [{ scale: 1.02 }] },

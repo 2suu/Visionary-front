@@ -1,9 +1,9 @@
 // screens/presurvey/EducationScreen.tsx
-import React, { useState } from 'react';
+import { router } from 'expo-router';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
-// 다음 화면 연결은 나중 단계에서 router.push로 교체
-import { router } from 'expo-router';
+import { ROUTES, useSurvey } from './survey-context';
 
 const OPTIONS = [
   '🏫 중학교 졸업 이하',
@@ -12,11 +12,27 @@ const OPTIONS = [
   '🎓 4년제 대학교 졸업',
   '📚 대학원 이상',
 ] as const;
+type UiEdu = (typeof OPTIONS)[number];
 
-type Edu = (typeof OPTIONS)[number];
+const PRIMARY = '#4E41FF';
 
 export default function EducationScreen() {
-  const [value, setValue] = useState<Edu | null>(null);
+  const { data, setData } = useSurvey();
+
+  // 저장된 값(이모지 없는 깨끗한 값)을 UI 라벨로 역매핑해서 초기 선택 복원
+  const initialUi = useMemo<UiEdu | null>(() => {
+    if (!data.education) return null;
+    switch (data.education) {
+      case '중학교 졸업 이하': return '🏫 중학교 졸업 이하';
+      case '고등학교 졸업': return '🎓 고등학교 졸업';
+      case '2~3년제 대학교 졸업': return '🧑‍🎓 2~3년제 대학교 졸업';
+      case '4년제 대학교 졸업': return '🎓 4년제 대학교 졸업';
+      case '대학원 이상': return '📚 대학원 이상';
+      default: return null;
+    }
+  }, [data.education]);
+
+  const [value, setValue] = useState<UiEdu | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
@@ -25,8 +41,17 @@ export default function EducationScreen() {
       return;
     }
     setError(null);
-    // TODO: 다음 화면 연결
-    router.push('/presurvey/experience');
+
+    // UI 라벨 → 저장값(이모지 제거)
+    const clean =
+      value.endsWith('중학교 졸업 이하') ? '중학교 졸업 이하' :
+      value.endsWith('고등학교 졸업') ? '고등학교 졸업' :
+      value.endsWith('2~3년제 대학교 졸업') ? '2~3년제 대학교 졸업' :
+      value.endsWith('4년제 대학교 졸업') ? '4년제 대학교 졸업' :
+      '대학원 이상';
+
+    setData({ education: clean });
+    router.push(ROUTES.experience);
   };
 
   return (
@@ -35,7 +60,12 @@ export default function EducationScreen() {
         {OPTIONS.map((opt) => {
           const active = value === opt;
           return (
-            <TouchableOpacity key={opt} style={[styles.item, active && styles.itemActive]} onPress={() => setValue(opt)}>
+            <TouchableOpacity
+              key={opt}
+              style={[styles.item, active && styles.itemActive]}
+              onPress={() => setValue(opt)}
+              activeOpacity={0.9}
+            >
               <Text style={[styles.itemText, active && styles.itemTextActive]}>{opt}</Text>
             </TouchableOpacity>
           );
@@ -44,8 +74,6 @@ export default function EducationScreen() {
     </QuestionWrapper>
   );
 }
-
-const PRIMARY = '#4E41FF';
 
 const styles = StyleSheet.create({
   list: { width: '100%', marginTop: 8, gap: 12 },
@@ -61,7 +89,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  itemActive: { borderColor: PRIMARY, shadowOpacity: 0.12 },
+  itemActive: { borderColor: PRIMARY, backgroundColor: '#F5F3FF', shadowOpacity: 0.12 },
   itemText: { fontSize: 16, color: '#111' },
   itemTextActive: { color: PRIMARY, fontWeight: '700' },
 });

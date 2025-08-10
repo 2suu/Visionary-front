@@ -1,23 +1,49 @@
 // screens/presurvey/ExperienceDetailScreen.tsx
 import { router } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
+import { ROUTES, useSurvey } from './survey-context';
 
 type Row = { field: string; years: string; months: string };
 
+const PRIMARY = '#4E41FF';
+
 export default function ExperienceDetailScreen() {
-  const [rows, setRows] = useState<Row[]>([{ field: '', years: '', months: '' }]);
+  const { data, upsertExperience, setData } = useSurvey();
+
+  // ✅ 저장된 experiences를 입력 필드 초기값으로 복원
+  const initialRows = useMemo<Row[]>(() => {
+    if (!data.experiences || data.experiences.length === 0) {
+      return [{ field: '', years: '', months: '' }];
+    }
+    return data.experiences.slice(0, 2).map(e => ({
+      field: e.field ?? '',
+      years: e.years != null ? String(e.years) : '',
+      months: e.months != null ? String(e.months) : '',
+    }));
+  }, [data.experiences]);
+
+  const [rows, setRows] = useState<Row[]>(initialRows);
   const [error, setError] = useState<string | null>(null);
   const fieldRef0 = useRef<TextInput>(null);
 
+  useEffect(() => {
+    const t = setTimeout(() => fieldRef0.current?.focus(), 200);
+    return () => clearTimeout(t);
+  }, []);
+
   const addRow = () => {
     if (rows.length >= 2) return;
-    setRows((r) => [...r, { field: '', years: '', months: '' }]);
+    setRows(r => [...r, { field: '', years: '', months: '' }]);
   };
 
   const update = (idx: number, key: keyof Row, val: string) => {
-    setRows((r) => r.map((row, i) => (i === idx ? { ...row, [key]: val } : row)));
+    setRows(r => r.map((row, i) => (i === idx ? { ...row, [key]: val } : row)));
+  };
+
+  const remove = (idx: number) => {
+    setRows(r => r.filter((_, i) => i !== idx));
   };
 
   const valid = (r: Row) => {
@@ -29,14 +55,31 @@ export default function ExperienceDetailScreen() {
   };
 
   const onNext = () => {
-    if (!rows.some(valid)) {
+    const picked = rows.filter(valid).slice(0, 2);
+    if (picked.length === 0) {
       setError('최소 1개 이상, 경력분야와 근무기간(년차/개월)을 입력해 주세요.');
       fieldRef0.current?.focus();
       return;
     }
     setError(null);
-    // const payload = rows.filter(valid)
-    router.push('/presurvey/economy-saving');
+
+    // ✅ Context 저장: 최대 2개까지 upsert
+    picked.forEach((r, i) => {
+      const years = Math.min(50, Math.max(0, Number(r.years || 0)));
+      const months = Math.min(11, Math.max(0, Number(r.months || 0)));
+      upsertExperience(i, { field: r.field.trim(), years, months });
+    });
+
+    // 나머지 슬롯 비우기(기존에 2개였다가 1개로 줄였을 수도 있어서)
+    if (picked.length === 1) {
+      upsertExperience(1, { field: '', years: 0, months: 0 });
+      // 빈 항목은 확인화면에서 표시되지 않도록 hasExperience만 true로 지정
+    }
+
+    // 방어적으로 hasExperience true 세팅
+    setData({ hasExperience: true });
+
+    router.push(ROUTES.economySaving);
   };
 
   return (
@@ -55,7 +98,14 @@ export default function ExperienceDetailScreen() {
         {rows.map((row, idx) => (
           <View key={idx} style={styles.card}>
             {/* 경력분야 */}
-            <Text style={styles.label}>경력분야</Text>
+            <View style={styles.rowHeader}>
+              <Text style={styles.label}>경력분야</Text>
+              {rows.length > 1 && (
+                <TouchableOpacity onPress={() => remove(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={{ color: '#9A9AAF' }}>삭제</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <TextInput
               ref={idx === 0 ? fieldRef0 : undefined}
               value={row.field}
@@ -105,8 +155,6 @@ export default function ExperienceDetailScreen() {
   );
 }
 
-const PRIMARY = '#4E41FF';
-
 const styles = StyleSheet.create({
   helperBox: { width: '100%', marginBottom: 8 },
   helperText: { fontSize: 12, color: '#666', marginBottom: 2 },
@@ -124,7 +172,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  label: { fontSize: 13, color: '#444', marginBottom: 6 },
+  rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  label: { fontSize: 13, color: '#444' },
+
   fieldInput: {
     borderWidth: 1,
     borderColor: '#EFEFEF',

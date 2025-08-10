@@ -1,19 +1,30 @@
+// screens/presurvey/MoodScreen.tsx
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
+import { ROUTES, useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
 
+// ✅ survey-context의 MOOD_SHORT 매핑과 "완전히 동일"한 정식 문장들
 const OPTIONS = [
   '😊 감정이 안정적이고 쉽게 흔들리지 않아요',
   '🙂 약간의 기복은 있지만 스스로 잘 조절해요',
   '😕 기분 변화가 가끔 심한 편이에요',
   '😣 감정 기복이 크고, 컨트롤이 잘 안 될 때도 있어요',
-];
+] as const;
 
 export default function MoodScreen() {
-  const [selected, setSelected] = useState<number | null>(null);
+  const { data, chooseMood } = useSurvey();
+
+  // 저장된 moodFull이 있으면 그 인덱스로 초기 선택 복원
+  const initialIndex = useMemo(
+    () => (data.moodFull ? OPTIONS.findIndex((v) => v === data.moodFull) : -1),
+    [data.moodFull]
+  );
+
+  const [selected, setSelected] = useState<number | null>(initialIndex >= 0 ? initialIndex : null);
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
@@ -22,8 +33,9 @@ export default function MoodScreen() {
       return;
     }
     setError(null);
-    console.log('감정(기본 변화):', selected);
-    router.push('/presurvey/stress');
+    // ✅ 정식 문장 저장 → 컨텍스트에서 짧은 라벨(moodShort) 자동 세팅
+    chooseMood(OPTIONS[selected]);
+    router.push(ROUTES.stress);
   };
 
   return (
@@ -68,10 +80,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardOn: {
-    borderColor: PRIMARY,
-    backgroundColor: '#F2F1FF',
-  },
+  cardOn: { borderColor: PRIMARY, backgroundColor: '#F2F1FF' },
   cardText: { fontSize: 14, lineHeight: 20, color: '#2A2A35' },
   cardTextOn: { color: PRIMARY, fontWeight: '700' },
 });

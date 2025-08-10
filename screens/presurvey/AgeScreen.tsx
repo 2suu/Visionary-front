@@ -1,13 +1,23 @@
 // screens/presurvey/AgeScreen.tsx
 import { router } from 'expo-router';
-import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
+import { ROUTES, useSurvey } from './survey-context';
+
+const PRIMARY = '#4E41FF';
 
 export default function AgeScreen() {
-  const [age, setAge] = useState<string>('');
+  const { data, setData } = useSurvey();
+  const [age, setAge] = useState<string>(data.age ? String(data.age) : '');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    // 화면 진입 시 포커스 (선택)
+    const t = setTimeout(() => inputRef.current?.focus(), 200);
+    return () => clearTimeout(t);
+  }, []);
 
   const onNext = () => {
     const n = Number(age);
@@ -17,7 +27,9 @@ export default function AgeScreen() {
       return;
     }
     setError(null);
-    router.push('/presurvey/gender');
+    setData({ age: n });         // ✅ Context에 저장
+    Keyboard.dismiss();
+    router.push(ROUTES.gender);  // ✅ 하드코딩 대신 ROUTES 사용
   };
 
   return (
@@ -27,9 +39,9 @@ export default function AgeScreen() {
           ref={inputRef}
           value={age}
           onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))}
-          keyboardType="number-pad"
+          keyboardType="number-pad"        // iOS/Android 숫자패드
           placeholder="나이"
-          placeholderTextColor="#D4D4D4" 
+          placeholderTextColor="#D4D4D4"
           style={styles.input}
           returnKeyType="done"
           onSubmitEditing={onNext}
@@ -39,8 +51,6 @@ export default function AgeScreen() {
     </QuestionWrapper>
   );
 }
-
-const PRIMARY = '#4E41FF';
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginTop: 32, width: '100%', paddingHorizontal: 8 },

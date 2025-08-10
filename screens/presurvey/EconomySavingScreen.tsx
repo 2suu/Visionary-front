@@ -3,44 +3,61 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
+import { ROUTES, useSurvey } from './survey-context';
 
-type Opt =
-  | '저축할 여유가 없어요'
-  | '조금씩이라도 저축하고 있어요'
-  | '매달 일정금액 이상 저축하고 있어요'
-  | '저축 외에도 투자까지 여유가 있어요';
+type Key = 'none' | 'little' | 'monthly' | 'invest';
 
-const OPTIONS: { label: Opt; emoji: string }[] = [
-  { label: '저축할 여유가 없어요',          emoji: '🚫' },
-  { label: '조금씩이라도 저축하고 있어요',  emoji: '💰' },
-  { label: '매달 일정금액 이상 저축하고 있어요', emoji: '📅' },
-  { label: '저축 외에도 투자까지 여유가 있어요',  emoji: '📈' },
+const CANONICAL_FULL: Record<Key, string> = {
+  // ✅ survey-context의 SAVING_SHORT 매핑과 정확히 동일한 문장(이모지+띄어쓰기 포함)
+  none:   '🚫 저축할 여유가 없다',
+  little: '💰 조금씩이라도 저축 중이다',
+  monthly:'📅 매달 일정 금액 이상 저축 중이다',
+  invest: '📈 저축 외에도 투자까지 여유가 있다',
+};
+
+const OPTIONS: { key: Key; emoji: string; uiLabel: string }[] = [
+  { key: 'none',    emoji: '🚫', uiLabel: '저축할 여유가 없어요' },
+  { key: 'little',  emoji: '💰', uiLabel: '조금씩이라도 저축하고 있어요' },
+  { key: 'monthly', emoji: '📅', uiLabel: '매달 일정금액 이상 저축하고 있어요' },
+  { key: 'invest',  emoji: '📈', uiLabel: '저축 외에도 투자까지 여유가 있어요' },
 ];
 
+const PRIMARY = '#4E41FF';
+
 export default function EconomySavingScreen() {
-  const [value, setValue] = useState<Opt | null>(null);
+  const { data, chooseSaving } = useSurvey();
+  const [selected, setSelected] = useState<Key | null>(() => {
+    // 저장된 savingFull을 역매핑해서 초기 선택 표시
+    const entry = Object.entries(CANONICAL_FULL).find(([, full]) => full === data.savingFull);
+    return (entry?.[0] as Key) ?? null;
+  });
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
-    if (!value) { setError('질문에 응답해 주세요'); return; }
+    if (!selected) {
+      setError('질문에 응답해 주세요');
+      return;
+    }
     setError(null);
-    router.push('/presurvey/economy-spending');
+    // ✅ 컨텍스트에 "정식 문장" 저장 → 내부에서 짧은 라벨까지 자동 세팅
+    chooseSaving(CANONICAL_FULL[selected]);
+    router.push(ROUTES.economySpending);
   };
 
   return (
     <QuestionWrapper question="한 달에 어느 정도 저축이 가능한가요?" onNext={onNext} error={error}>
       <View style={styles.list}>
-        {OPTIONS.map(({ label, emoji }) => {
-          const active = value === label;
+        {OPTIONS.map(({ key, emoji, uiLabel }) => {
+          const active = selected === key;
           return (
             <TouchableOpacity
-              key={label}
-              onPress={() => setValue(label)}
+              key={key}
+              onPress={() => setSelected(key)}
               activeOpacity={0.9}
               style={[styles.card, active && styles.cardActive]}
             >
               <Text style={[styles.emoji, active && styles.emojiActive]}>{emoji}</Text>
-              <Text style={[styles.cardText, active && styles.cardTextActive]}>{label}</Text>
+              <Text style={[styles.cardText, active && styles.cardTextActive]}>{uiLabel}</Text>
             </TouchableOpacity>
           );
         })}
@@ -49,7 +66,6 @@ export default function EconomySavingScreen() {
   );
 }
 
-const PRIMARY = '#4E41FF';
 const styles = StyleSheet.create({
   list: { width: '100%', gap: 14, marginTop: 8 },
   card: {
