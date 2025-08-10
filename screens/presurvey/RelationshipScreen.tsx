@@ -1,5 +1,5 @@
 // screens/presurvey/RelationshipScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -14,6 +14,13 @@ const Q2_OPTIONS = [
 
 export default function RelationshipScreen() {
   const { data, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: string }>();
+
+  // ✅ 수정모드 분기: 저장 후 확인화면으로 복귀 / 일반흐름은 다음 화면으로
+  const goNext = (nextRoute: string) => {
+    if (from === 'confirm') router.replace(ROUTES.confirm);
+    else router.push(nextRoute);
+  };
 
   // ✅ Confirm에서 편집으로 들어왔을 때, 저장된 값을 기준으로 초기 선택 복원
   const initialIdxQ1 = useMemo(
@@ -42,7 +49,7 @@ export default function RelationshipScreen() {
       relationStyle: Q2_OPTIONS[q2].label,
     });
 
-    router.push(ROUTES.mood);
+    goNext(ROUTES.mood);
   };
 
   return (

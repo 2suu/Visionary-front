@@ -1,5 +1,5 @@
 // screens/presurvey/EconomySavingScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ useLocalSearchParams 추가
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -8,7 +8,6 @@ import { ROUTES, useSurvey } from './survey-context';
 type Key = 'none' | 'little' | 'monthly' | 'invest';
 
 const CANONICAL_FULL: Record<Key, string> = {
-  // ✅ survey-context의 SAVING_SHORT 매핑과 정확히 동일한 문장(이모지+띄어쓰기 포함)
   none:   '🚫 저축할 여유가 없다',
   little: '💰 조금씩이라도 저축 중이다',
   monthly:'📅 매달 일정 금액 이상 저축 중이다',
@@ -26,12 +25,21 @@ const PRIMARY = '#4E41FF';
 
 export default function EconomySavingScreen() {
   const { data, chooseSaving } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: string }>(); // ⬅ 수정 모드 파라미터
   const [selected, setSelected] = useState<Key | null>(() => {
-    // 저장된 savingFull을 역매핑해서 초기 선택 표시
     const entry = Object.entries(CANONICAL_FULL).find(([, full]) => full === data.savingFull);
     return (entry?.[0] as Key) ?? null;
   });
   const [error, setError] = useState<string | null>(null);
+
+  // ⬅ 공통 이동 함수
+  const goNext = (nextRoute: string) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+    } else {
+      router.push(nextRoute); // 일반 모드면 다음 화면
+    }
+  };
 
   const onNext = () => {
     if (!selected) {
@@ -39,9 +47,8 @@ export default function EconomySavingScreen() {
       return;
     }
     setError(null);
-    // ✅ 컨텍스트에 "정식 문장" 저장 → 내부에서 짧은 라벨까지 자동 세팅
     chooseSaving(CANONICAL_FULL[selected]);
-    router.push(ROUTES.economySpending);
+    goNext(ROUTES.economySpending); // ⬅ 여기서 공통 함수 사용
   };
 
   return (

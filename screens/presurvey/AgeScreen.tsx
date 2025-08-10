@@ -1,5 +1,5 @@
 // screens/presurvey/AgeScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useEffect, useRef, useState } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -9,15 +9,25 @@ const PRIMARY = '#4E41FF';
 
 export default function AgeScreen() {
   const { data, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: string }>(); // ⬅ 추가
   const [age, setAge] = useState<string>(data.age ? String(data.age) : '');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    // 화면 진입 시 포커스 (선택)
     const t = setTimeout(() => inputRef.current?.focus(), 200);
     return () => clearTimeout(t);
   }, []);
+
+  // ⬅ 공통 이동 함수
+  // (타입 깔끔히 가려면: const goNext = (nextRoute: (typeof ROUTES)[keyof typeof ROUTES]) => { ... })
+  const goNext = (nextRoute: string) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm);
+    } else {
+      router.push(nextRoute);
+    }
+  };
 
   const onNext = () => {
     const n = Number(age);
@@ -27,9 +37,9 @@ export default function AgeScreen() {
       return;
     }
     setError(null);
-    setData({ age: n });         // ✅ Context에 저장
+    setData({ age: n });
     Keyboard.dismiss();
-    router.push(ROUTES.gender);  // ✅ 하드코딩 대신 ROUTES 사용
+    goNext(ROUTES.gender); // ⬅ 교체
   };
 
   return (
@@ -39,7 +49,7 @@ export default function AgeScreen() {
           ref={inputRef}
           value={age}
           onChangeText={(t) => setAge(t.replace(/[^0-9]/g, ''))}
-          keyboardType="number-pad"        // iOS/Android 숫자패드
+          keyboardType="number-pad"
           placeholder="나이"
           placeholderTextColor="#D4D4D4"
           style={styles.input}

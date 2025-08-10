@@ -1,18 +1,19 @@
 // screens/presurvey/ExperienceScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
 import { ROUTES, useSurvey } from './survey-context';
 
 type Ans = '예 (경력 있어요)' | '아니오 (경력 없어요)';
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]; // ⬅ 선택(타입 안전)
 
 const PRIMARY = '#4E41FF';
 
 export default function ExperienceScreen() {
   const { data, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // ✅ 저장된 hasExperience로 초기 선택 복원
   const initialUi = useMemo<Ans | null>(() => {
     if (data.hasExperience === true) return '예 (경력 있어요)';
     if (data.hasExperience === false) return '아니오 (경력 없어요)';
@@ -21,6 +22,15 @@ export default function ExperienceScreen() {
 
   const [value, setValue] = useState<Ans | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
+
+  // ⬅ 공통 이동 함수
+  const goNext = (next: RoutePath) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+    } else {
+      router.push(next);              // 일반 흐름이면 다음 단계
+    }
+  };
 
   const onNext = () => {
     if (!value) {
@@ -32,11 +42,11 @@ export default function ExperienceScreen() {
     const yes = value.startsWith('예');
     setData({
       hasExperience: yes,
-      // ❗ '아니오' 선택하면 이전 상세 입력을 정리
-      ...(yes ? {} : { experiences: [] }),
+      ...(yes ? {} : { experiences: [] }), // 아니오면 상세 초기화
     });
 
-    router.push(yes ? ROUTES.experienceDetail : ROUTES.economySaving);
+    // ✅ 수정 모드에서도 Confirm으로 돌아가야 하므로 goNext 사용
+    goNext(yes ? ROUTES.experienceDetail : ROUTES.economySaving);
   };
 
   return (
@@ -45,7 +55,7 @@ export default function ExperienceScreen() {
         {([
           { label: '예 (경력 있어요)', emoji: '🔵' },
           { label: '아니오 (경력 없어요)', emoji: '❌' },
-        ] as { label: Ans; emoji: string }[]).map(({ label, emoji }) => {
+        ] as const).map(({ label, emoji }) => {
           const active = value === label;
           return (
             <TouchableOpacity
@@ -81,11 +91,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardActive: {
-    borderColor: PRIMARY,
-    shadowOpacity: 0.12,
-    backgroundColor: '#F5F3FF',
-  },
+  cardActive: { borderColor: PRIMARY, shadowOpacity: 0.12, backgroundColor: '#F5F3FF' },
   emoji: { fontSize: 18 },
   emojiActive: { transform: [{ scale: 1.02 }] },
   cardText: { fontSize: 16, color: '#111' },

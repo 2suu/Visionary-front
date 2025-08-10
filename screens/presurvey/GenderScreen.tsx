@@ -1,5 +1,5 @@
 // screens/presurvey/GenderScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -7,13 +7,15 @@ import { ROUTES, useSurvey } from './survey-context';
 
 const OPTIONS = ['♂️ 남자', '♀️ 여자', '🔒 밝히고 싶지 않음'] as const;
 type UiGender = (typeof OPTIONS)[number];
+// 선택: 타입 안전하게
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
 const PRIMARY = '#4E41FF';
 
 export default function GenderScreen() {
   const { data, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // 저장된 값(남자/여자/밝히고 싶지 않음)을 UI 라벨(이모지 포함)로 역매핑해서 초기 선택 복원
   const initialUi = useMemo<UiGender | null>(() => {
     if (!data.gender) return null;
     switch (data.gender) {
@@ -27,21 +29,26 @@ export default function GenderScreen() {
   const [value, setValue] = useState<UiGender | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
 
-  const onNext = () => {
-    if (!value) {
-      setError('질문에 응답해 주세요');
-      return;
+  // 공통 이동 함수
+  const goNext = (next: RoutePath) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm);  // 수정 모드 → Confirm 복귀
+    } else {
+      router.push(next);               // 일반 흐름 → 다음 화면
     }
+  };
+
+  const onNext = () => {
+    if (!value) { setError('질문에 응답해 주세요'); return; }
     setError(null);
 
-    // UI 라벨 → 저장값(이모지 제거)
     const clean =
       value === '♂️ 남자' ? '남자' :
       value === '♀️ 여자' ? '여자' :
       '밝히고 싶지 않음';
 
     setData({ gender: clean });
-    router.push(ROUTES.education);
+    goNext(ROUTES.education); // ✅ 교체
   };
 
   return (

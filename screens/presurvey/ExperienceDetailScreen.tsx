@@ -1,18 +1,19 @@
 // screens/presurvey/ExperienceDetailScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
 import { ROUTES, useSurvey } from './survey-context';
 
 type Row = { field: string; years: string; months: string };
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]; // ⬅ 선택(타입 안전)
 
 const PRIMARY = '#4E41FF';
 
 export default function ExperienceDetailScreen() {
   const { data, upsertExperience, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // ✅ 저장된 experiences를 입력 필드 초기값으로 복원
   const initialRows = useMemo<Row[]>(() => {
     if (!data.experiences || data.experiences.length === 0) {
       return [{ field: '', years: '', months: '' }];
@@ -51,7 +52,16 @@ export default function ExperienceDetailScreen() {
     const m = Number(r.months);
     const yOk = Number.isFinite(y) && y >= 0 && y <= 50;
     const mOk = Number.isFinite(m) && m >= 0 && m <= 11;
-    return r.field.trim().length > 0 && (yOk || mOk); // 둘 중 하나라도 입력되면 OK
+    return r.field.trim().length > 0 && (yOk || mOk);
+  };
+
+  // ⬅ 공통 이동 함수
+  const goNext = (next: RoutePath) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+    } else {
+      router.push(next);              // 일반 흐름이면 다음 단계
+    }
   };
 
   const onNext = () => {
@@ -63,23 +73,23 @@ export default function ExperienceDetailScreen() {
     }
     setError(null);
 
-    // ✅ Context 저장: 최대 2개까지 upsert
+    // 저장 (최대 2개)
     picked.forEach((r, i) => {
       const years = Math.min(50, Math.max(0, Number(r.years || 0)));
       const months = Math.min(11, Math.max(0, Number(r.months || 0)));
       upsertExperience(i, { field: r.field.trim(), years, months });
     });
 
-    // 나머지 슬롯 비우기(기존에 2개였다가 1개로 줄였을 수도 있어서)
+    // 1개만 남긴 경우 두 번째 슬롯 비우기
     if (picked.length === 1) {
       upsertExperience(1, { field: '', years: 0, months: 0 });
-      // 빈 항목은 확인화면에서 표시되지 않도록 hasExperience만 true로 지정
     }
 
-    // 방어적으로 hasExperience true 세팅
+    // 방어적으로 hasExperience true
     setData({ hasExperience: true });
 
-    router.push(ROUTES.economySaving);
+    // ✅ 수정 모드면 Confirm으로, 아니면 다음 단계로
+    goNext(ROUTES.economySaving);
   };
 
   return (
@@ -88,6 +98,8 @@ export default function ExperienceDetailScreen() {
       onNext={onNext}
       error={error}
     >
+      {/* 이하 동일 */}
+
       <View style={styles.helperBox}>
         <Text style={styles.helperText}>인턴 또는 정규직으로 근무한 분야만 입력 가능합니다.</Text>
         <Text style={styles.helperText}>경력은 최대 2개까지 작성할 수 있습니다.</Text>

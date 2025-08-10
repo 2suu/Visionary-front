@@ -1,5 +1,5 @@
 // screens/presurvey/MoodScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -7,7 +7,6 @@ import { ROUTES, useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
 
-// ✅ survey-context의 MOOD_SHORT 매핑과 "완전히 동일"한 정식 문장들
 const OPTIONS = [
   '😊 감정이 안정적이고 쉽게 흔들리지 않아요',
   '🙂 약간의 기복은 있지만 스스로 잘 조절해요',
@@ -17,8 +16,8 @@ const OPTIONS = [
 
 export default function MoodScreen() {
   const { data, chooseMood } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // 저장된 moodFull이 있으면 그 인덱스로 초기 선택 복원
   const initialIndex = useMemo(
     () => (data.moodFull ? OPTIONS.findIndex((v) => v === data.moodFull) : -1),
     [data.moodFull]
@@ -27,15 +26,23 @@ export default function MoodScreen() {
   const [selected, setSelected] = useState<number | null>(initialIndex >= 0 ? initialIndex : null);
   const [error, setError] = useState<string | null>(null);
 
+  // ⬅ 공통 이동 함수
+  const goNext = (next: (typeof ROUTES)[keyof typeof ROUTES]) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+    } else {
+      router.push(next);               // 일반 흐름이면 다음
+    }
+  };
+
   const onNext = () => {
     if (selected === null) {
       setError('하나를 선택해 주세요.');
       return;
     }
     setError(null);
-    // ✅ 정식 문장 저장 → 컨텍스트에서 짧은 라벨(moodShort) 자동 세팅
-    chooseMood(OPTIONS[selected]);
-    router.push(ROUTES.stress);
+    chooseMood(OPTIONS[selected]);      // 정식 문장 저장 → short 자동 세팅
+    goNext(ROUTES.stress);              // ✅ 교체
   };
 
   return (

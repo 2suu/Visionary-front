@@ -1,5 +1,5 @@
 // screens/presurvey/StressScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -7,7 +7,6 @@ import { ROUTES, useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
 
-// ✅ survey-context의 STRESS_SHORT 매핑과 완전히 동일한 정식 문장들
 const OPTIONS = [
   '✨ 운동이나 산책 같은 신체 활동을 해요',
   '💡 음악을 듣거나 영화를 보며 혼자만의 시간을 보내요',
@@ -17,8 +16,8 @@ const OPTIONS = [
 
 export default function StressScreen() {
   const { data, chooseStress } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // 저장된 stressFull이 있으면 그 인덱스로 초기 선택 복원
   const initialIndex = useMemo(
     () => (data.stressFull ? OPTIONS.findIndex((v) => v === data.stressFull) : -1),
     [data.stressFull]
@@ -27,15 +26,23 @@ export default function StressScreen() {
   const [selected, setSelected] = useState<number | null>(initialIndex >= 0 ? initialIndex : null);
   const [error, setError] = useState<string | null>(null);
 
+  // 공통 이동 함수
+  const goNext = (next: (typeof ROUTES)[keyof typeof ROUTES]) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 바로 Confirm 복귀
+    } else {
+      router.push(next); // 일반 모드면 다음 단계
+    }
+  };
+
   const onNext = () => {
     if (selected === null) {
       setError('하나를 선택해 주세요.');
       return;
     }
     setError(null);
-    // ✅ 정식 문장 저장 → 컨텍스트에서 짧은 라벨(stressShort) 자동 세팅
     chooseStress(OPTIONS[selected]);
-    router.push(ROUTES.confirm); // 마지막 확인 화면으로 이동
+    goNext(ROUTES.confirm); // ✅ 교체
   };
 
   return (

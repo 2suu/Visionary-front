@@ -1,5 +1,5 @@
 // screens/presurvey/EconomySpendingScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -7,7 +7,6 @@ import { ROUTES, useSurvey } from './survey-context';
 
 type Key = 'tight' | 'basic' | 'some' | 'plenty';
 
-// ✅ survey-context의 SPENDING_SHORT 매핑과 정확히 일치하는 정식 문장
 const CANONICAL_FULL: Record<Key, string> = {
   tight:  '🚫 생활비도 빠듯해 기본적인 지출이 어렵다',
   basic:  '🧾 기본 생활비는 가능한 수준이다',
@@ -26,18 +25,28 @@ const PRIMARY = '#4E41FF';
 
 export default function EconomySpendingScreen() {
   const { data, chooseSpending } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
   const [selected, setSelected] = useState<Key | null>(() => {
     const entry = Object.entries(CANONICAL_FULL).find(([, full]) => full === data.spendingFull);
     return (entry?.[0] as Key) ?? null;
   });
   const [error, setError] = useState<string | null>(null);
 
+  // ⬅ 공통 이동 함수
+  // 타입 깔끔: const goNext = (next: (typeof ROUTES)[keyof typeof ROUTES]) => { ... }
+  const goNext = (next: string) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 확인 화면으로 복귀
+    } else {
+      router.push(next);              // 일반 흐름이면 다음 단계로
+    }
+  };
+
   const onNext = () => {
     if (!selected) { setError('질문에 응답해 주세요'); return; }
     setError(null);
-    // ✅ 정식 문장 저장 → 컨텍스트에서 짧은 라벨(spendingShort) 자동 세팅
-    chooseSpending(CANONICAL_FULL[selected]);
-    router.push(ROUTES.relationship); // 다음 단계
+    chooseSpending(CANONICAL_FULL[selected]); // 정식 문장 저장 → short 자동 세팅
+    goNext(ROUTES.relationship); // ⬅ 교체
   };
 
   return (

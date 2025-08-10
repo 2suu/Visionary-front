@@ -1,5 +1,5 @@
 // screens/presurvey/EducationScreen.tsx
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -18,8 +18,9 @@ const PRIMARY = '#4E41FF';
 
 export default function EducationScreen() {
   const { data, setData } = useSurvey();
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
 
-  // 저장된 값(이모지 없는 깨끗한 값)을 UI 라벨로 역매핑해서 초기 선택 복원
+  // 저장값 → UI 라벨 역매핑
   const initialUi = useMemo<UiEdu | null>(() => {
     if (!data.education) return null;
     switch (data.education) {
@@ -34,6 +35,16 @@ export default function EducationScreen() {
 
   const [value, setValue] = useState<UiEdu | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
+
+  // ⬅ 공통 이동 함수
+  // 타입 빡세게: const goNext = (next: (typeof ROUTES)[keyof typeof ROUTES]) => { ... }
+  const goNext = (next: string) => {
+    if (from === 'confirm') {
+      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+    } else {
+      router.push(next);              // 일반 흐름이면 다음
+    }
+  };
 
   const onNext = () => {
     if (!value) {
@@ -51,7 +62,7 @@ export default function EducationScreen() {
       '대학원 이상';
 
     setData({ education: clean });
-    router.push(ROUTES.experience);
+    goNext(ROUTES.experience); // ⬅ 교체
   };
 
   return (
