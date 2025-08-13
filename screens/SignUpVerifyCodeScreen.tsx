@@ -1,167 +1,209 @@
+// screens/SignUpVerifyCodeScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  Alert, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { useSignUpStore } from '../stores/useSignUpStore'; //Zustand import
+import { useSignUp } from '../screens/signup-context';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
 
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
-  const { name, rrn, tel } = useSignUpStore(); // 값 가져오기
+  const { data } = useSignUp();
+  const { name, rrn7, carrier, phone, transactionId } = data;
 
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(180);
   const [expired, setExpired] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // 값 없으면 뒤로 보내기
   useEffect(() => {
-    if (!name || !rrn || !tel) {
-      Alert.alert('잘못된 접근', '이전 단계 정보가 없습니다.');
+    if (!name || !rrn7 || !phone) {
+      Alert.alert('잘못된 접근', '본인인증 정보가 없습니다.');
+      router.replace('/signup-verify');
+      return;
+    }
+    if (!transactionId) {
+      Alert.alert('안내', '인증번호 요청 정보가 없습니다. 다시 받아주세요.');
       router.replace('/signup-verify');
     }
-  }, []);
+  }, [name, rrn7, phone, transactionId]);
 
-  // ⏱️ 3분 타이머
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setExpired(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (timer <= 0) { setExpired(true); return; }
+    const id = setInterval(() => setTimer((t) => t - 1), 1000);
+    return () => clearInterval(id);
+  }, [timer]);
 
-  const formatTime = () => {
-    const m = String(Math.floor(timer / 60)).padStart(2, '0');
-    const s = String(timer % 60).padStart(2, '0');
+  const mmss = useMemo(() => {
+    const m = Math.floor(timer / 60).toString().padStart(2, '0');
+    const s = (timer % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
-  };
+  }, [timer]);
 
-  const handleVerify = () => {
-    if (!code.trim()) {
-      Alert.alert('오류', '인증번호를 입력해주세요.');
+  const handleVerify = async () => {
+    const c = code.trim();
+    if (!c || c.length < 4) {
+      Alert.alert('알림', '인증번호를 정확히 입력해주세요.');
       return;
     }
     if (expired) {
-      Alert.alert('시간 초과', '인증 시간이 초과되었습니다.');
+      Alert.alert('만료됨', '시간이 만료되었습니다. 다시 받아주세요.');
       return;
     }
-    Alert.alert('성공', '인증이 완료되었습니다.');
-    router.push('/signup-nickname');
+
+    try {
+      setLoading(true);
+
+      // ✅ 서버가 한글 키를 기대할 가능성이 높음 → 한글 키로 전달
+      // ✅ tx id 키도 모든 후보를 같이 보냄(고유Id, txId, transactionId)
+      const payload = {
+        이름: name,
+        주민등록번호: rrn7,
+        통신사: carrier,
+        전화번호: phone,
+        인증번호: c,
+        고유Id: transactionId,
+        txId: transactionId,
+        transactionId: transactionId,
+      };
+
+      console.log('[VERIFY REQ]', payload);
+
+      const res = await fetch(`${API_BASE}/api/auth/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 서버가 세션 쿠키 기반이면 주석 해제
+         credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      console.log('[VERIFY RES]', res.status, text);
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log('[VERIFY RES]', res.status, json ?? text);
+
+      const httpOk = res.status === 200;
+      const bodyOk = json?.응답코드 === 200 || json?.status === 200 || json?.ok === true;
+
+      if (httpOk || bodyOk) {
+        router.replace('/signup-nickname');
+      } else {
+        const msg =
+          json?.응답메세지 ||
+          json?.message ||
+          (res.status === 403 ? '검증 권한이 없거나 요청 형식이 맞지 않습니다.' : '인증 실패');
+        Alert.alert('실패', msg);
+      }
+    } catch (e: any) {
+      Alert.alert('오류', e?.message ?? '네트워크 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resend = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/api/auth/send-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          이름: name,
+          주민등록번호: rrn7,
+          통신사: carrier,
+          전화번호: phone,
+        }),
+      });
+      const text = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log('[RESEND RES]', res.status, json ?? text);
+
+      if (res.status === 200 || json?.응답코드 === 200) {
+        Alert.alert('안내', json?.응답메세지 ?? '인증번호가 재전송되었습니다.');
+        setTimer(180);
+        setExpired(false);
+        setCode('');
+        // 재전송 시 새로운 고유Id가 나오면 갱신 필요
+        // if (json?.고유Id || json?.txId || json?.transactionId) {
+        //   setField('transactionId', String(json.고유Id || json.txId || json.transactionId));
+        // }
+      } else {
+        Alert.alert('실패', json?.응답메세지 ?? '재전송에 실패했습니다.');
+      }
+    } catch (e: any) {
+      Alert.alert('오류', e?.message ?? '네트워크 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <KeyboardAvoidingView
-        style={styles.kav}
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        <View style={styles.content}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </TouchableOpacity>
+        <Text style={styles.title}>인증번호 입력</Text>
+        <Text style={styles.subtitle}>{phone} 로 받은 코드를 입력하세요</Text>
 
-          <Text style={styles.title}>인증번호 확인</Text>
-          <Text style={styles.subtitle}>3분 내로 받은 인증번호를 입력해주세요</Text>
-
+        <View style={styles.inputRow}>
           <TextInput
-            placeholder="인증번호 (4자리)"
-            maxLength={4}
-            keyboardType="numeric"
             value={code}
             onChangeText={setCode}
+            placeholder="인증번호"
+            keyboardType="number-pad"
+            maxLength={6}
             style={styles.input}
-            placeholderTextColor="#aaa"
-            returnKeyType="done"
-            textContentType="oneTimeCode"
+            editable={!expired && !loading}
           />
-
-          <Text style={styles.timerText}>
-            남은 시간: {expired ? '시간 초과' : formatTime()}
+          <Text style={[styles.timer, expired && { color: '#E53935' }]}>
+            {expired ? '만료' : mmss}
           </Text>
-
-          <TouchableOpacity style={styles.button} onPress={handleVerify}>
-            <Text style={styles.buttonText}>확인</Text>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={[styles.button, (expired || loading) && { opacity: 0.6 }]}
+          onPress={handleVerify}
+          disabled={expired || loading}
+        >
+          <Text style={styles.buttonText}>{loading ? '확인 중...' : '확인'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={resend} disabled={loading}>
+          <Text style={styles.resend}>인증번호 다시 받기</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8 }}>
+          <Text style={{ color: '#888' }}>
+            <Ionicons name="chevron-back" size={16} /> 뒤로가기
+          </Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: '#fff',
-  },
-  kav: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  backButton: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: 'SUIT-Bold',
-    marginBottom: 8,
-    color: '#000',
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: 'SUIT-Regular',
-    color: '#666',
-    marginBottom: 24,
-  },
+  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    fontSize: 20,
-    paddingVertical: 12,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontFamily: 'SUIT-Regular',
-    color: '#000',
+    flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 14, fontSize: 16,
   },
-  timerText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    fontFamily: 'SUIT-Regular',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
+  timer: { width: 56, textAlign: 'right', fontWeight: '600' },
   button: {
-    backgroundColor: '#4E41FF',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+    marginTop: 16, backgroundColor: '#4E41FF', paddingVertical: 14,
+    borderRadius: 10, alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'SUIT-Bold',
-  },
+  buttonText: { color: '#fff', fontWeight: '700' },
+  resend: { marginTop: 12, color: '#4E41FF', fontWeight: '600' },
 });
