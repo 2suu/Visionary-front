@@ -1,0 +1,70 @@
+name: 🎨 디자인/화면 구현 작업
+description: UI/UX 구현 또는 디자인 관련 작업을 기록합니다.
+title: "[Design] "
+labels: ["design"]
+assignees: [] # 필요 시 기본 담당자 입력
+
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: 📌 개요
+      description: 작업의 개요를 작성해주세요.
+      placeholder: |
+        사용자가 질문에 응답할 수 있는 설문 조사 화면을 구현합니다. 
+        각 질문은 단일/다중 선택, 척도형 등 다양한 타입을 지원하며, 
+        진행 상황 표시 및 결과 제출 기능을 포함합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 🎯 목표
+      description: 구현하고자 하는 기능 및 목표를 작성해주세요.
+      placeholder: |
+        - 설문 질문 표시 및 선택 기능 구현
+        - 질문 타입별 UI 컴포넌트 제작
+        - 진행률 표시(Progress bar)
+    validations:
+      required: true
+
+  - type: textarea
+    id: uiux
+    attributes:
+      label: 🎨 UI/UX
+      description: 화면 구성과 디자인 요소를 작성해주세요.
+      placeholder: |
+        - 상단: 설문 제목 + 진행률 바
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 📋 작업 항목
+      description: 구현에 필요한 세부 작업을 작성해주세요.
+      placeholder: |
+        - [ ] 화면 구조 및 라우팅 설정
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: ✅ 완료 조건
+      description: 작업이 완료되었다고 판단할 기준을 작성해주세요.
+      placeholder: |
+        - [ ] API 연동으로 질문 데이터 표시
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 📎 참고 자료
+      description: 디자인 시 참고할 자료나 링크를 작성해주세요.
+      placeholder: |
+        - Figma 설계 링크
+    validations:
+      required: false
