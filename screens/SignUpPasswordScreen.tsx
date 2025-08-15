@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -12,11 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSignUpStore } from '../stores/useSignUpStore';
+import { useSignUp } from './signup-context';
 
 export default function SignUpPasswordScreen() {
   const router = useRouter();
-  const { nickname, userId, setField } = useSignUpStore();
+  const { data, setField } = useSignUp();
+  const { nickname, userId } = data;
+
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
@@ -24,50 +27,154 @@ export default function SignUpPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // ✅ 디버그/에러 상태
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastReq, setLastReq] = useState<any>(null);
+  const [lastRes, setLastRes] = useState<{ status: number; body: string } | null>(null);
+
+  // 👇 개발 중 디버그 박스 표시 토글
+  const SHOW_DEBUG = true;
+
+  // ✅ 가드: 닉네임/아이디 없으면 이전 단계로
   useEffect(() => {
-    if (!nickname || !userId) {
-      Alert.alert('잘못된 접근', '닉네임 또는 아이디가 없습니다.');
+    if (!nickname) {
+      Alert.alert('잘못된 접근', '닉네임이 없습니다.');
       router.replace('/signup-nickname');
+      return;
     }
-  }, []);
+    if (!userId) {
+      Alert.alert('잘못된 접근', '아이디가 없습니다.');
+      router.replace('/signup-id');
+    }
+  }, [nickname, userId, router]);
+
+  const clean = (s: string) => s.replace(/\s/g, ''); // 공백 제거
+  const maskPwd = (s: string) => (!s ? '' : s.length <= 4 ? '****' : '*'.repeat(s.length - 4) + s.slice(-4));
 
   const rules = useMemo(() => {
-    const lengthOK = password.length >= 8 && password.length <= 16;
-    const hasLetter = /[A-Za-z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const pwd = clean(password);
+    const lengthOK = pwd.length >= 8 && pwd.length <= 16;
+    const hasLetter = /[A-Za-z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(pwd);
     const isValid = lengthOK && hasLetter && hasNumber && hasSpecial;
     return { lengthOK, hasLetter, hasNumber, hasSpecial, isValid };
   }, [password]);
 
-  const matchOK = useMemo(
-    () => confirm.length > 0 && password === confirm,
-    [password, confirm]
-  );
+  const matchOK = useMemo(() => {
+    const a = clean(password), b = clean(confirm);
+    return b.length > 0 && a === b;
+  }, [password, confirm]);
 
-  const handleNext = () => {
-    if (!rules.isValid || !matchOK) {
-      Alert.alert(
-        '비밀번호를 확인해주세요',
-        !rules.isValid
-          ? '비밀번호는 8~16자이며, 영문/숫자/특수문자를 모두 포함해야 합니다.'
-          : '비밀번호와 비밀번호 확인이 일치하지 않습니다.'
-      );
+  const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
+
+  const handleNext = async () => {
+  if (loading) return;           // 🔒 중복 클릭 방지
+  setErrorMsg(null);             // 이전 에러 초기화
+
+  if (!rules.isValid || !matchOK) {
+    const msg = !rules.isValid
+      ? '비밀번호는 8~16자이며, 영문/숫자/특수문자를 모두 포함해야 합니다.'
+      : '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
+    setErrorMsg(msg);
+    Alert.alert('비밀번호를 확인해주세요', msg);
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // 1) Context에 저장
+    const passwordClean = clean(password);
+    setField('password', passwordClean);
+
+    // 2) Payload
+    const payload = {
+      id: data.userId,
+      password: passwordClean,
+      nickName: data.nickname,         // 서버 필드명
+      transactionId: data.transactionId,
+    };
+    const safePayload = { ...payload, password: '********' };
+    setLastReq(safePayload);
+    console.log('[SIGNUP PAYLOAD]', payload);
+
+    // 3) 요청
+    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await res.text();
+    setLastRes({ status: res.status, body: text });
+
+    if (!res.ok) {
+      // 서버 메시지 파싱
+      let msg = `서버 오류(${res.status})`;
+      try {
+        const j = JSON.parse(text);
+        msg = j.message || j.error || msg;
+        if (j.errors) {
+          msg = j.errors.map((e: any) =>
+            e.defaultMessage || e.message || `${e.field}: ${e.code}`
+          ).join('\n');
+        }
+      } catch {
+        if (text) msg = text;
+      }
+
+      // 🎯 중복 에러면 해당 화면으로 보내기
+      const isIdDup = msg.includes('아이디') && (msg.includes('이미 사용') || msg.includes('중복'));
+      const isNickDup = msg.includes('닉네임') && (msg.includes('이미 사용') || msg.includes('중복'));
+      if (isIdDup) {
+        Alert.alert('아이디 중복', msg, [
+          { text: '확인', onPress: () =>
+              router.replace({ pathname: '/signup-id', params: { error: msg } })
+            },
+        ]);
+        return;
+      }
+      if (isNickDup) {
+        Alert.alert('닉네임 중복', msg, [
+          { text: '확인', onPress: () =>
+              router.replace({ pathname: '/signup-nickname', params: { error: msg } })
+            },
+        ]);
+        return;
+      }
+
+      setErrorMsg(msg);
+      Alert.alert('회원가입 실패', msg);
       return;
     }
-    setField('password', password);
-    router.push('/signup-agree');
-  };
+
+    // ✅ 성공 처리: 웹은 즉시 이동, 네이티브만 Alert 콜백 사용
+    if (Platform.OS === 'web') {
+      router.replace('/signup-complete');
+      return;
+    } else {
+      Alert.alert('회원가입 성공', '완료 화면으로 이동합니다.', [
+        { text: '확인', onPress: () => router.replace('/signup-complete') },
+      ]);
+      return;
+    }
+  } catch (err: any) {
+    const msg = err?.message ?? '알 수 없는 오류';
+    setErrorMsg(msg);
+    Alert.alert('회원가입 실패', msg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0} // 헤더 높이에 맞게 조정
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         <View style={styles.content}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -91,16 +198,10 @@ export default function SignUpPasswordScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="next"
+              textContentType="newPassword"
             />
-            <TouchableOpacity
-              onPress={() => setShowPassword((prev) => !prev)}
-              style={styles.eyeButton}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={22}
-                color="#666"
-              />
+            <TouchableOpacity onPress={() => setShowPassword(p => !p)} style={styles.eyeButton}>
+              <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#666" />
             </TouchableOpacity>
           </View>
 
@@ -116,21 +217,15 @@ export default function SignUpPasswordScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
+              textContentType="password"
             />
-            <TouchableOpacity
-              onPress={() => setShowConfirm((prev) => !prev)}
-              style={styles.eyeButton}
-            >
-              <Ionicons
-                name={showConfirm ? 'eye-off' : 'eye'}
-                size={22}
-                color="#666"
-              />
+            <TouchableOpacity onPress={() => setShowConfirm(p => !p)} style={styles.eyeButton}>
+              <Ionicons name={showConfirm ? 'eye-off' : 'eye'} size={22} color="#666" />
             </TouchableOpacity>
           </View>
 
           {confirm.length > 0 && !matchOK && (
-            <Text style={styles.error}>비밀번호가 일치하지 않습니다.</Text>
+            <Text style={styles.errorInline}>비밀번호가 일치하지 않습니다.</Text>
           )}
 
           <View style={styles.ruleList}>
@@ -141,16 +236,43 @@ export default function SignUpPasswordScreen() {
             <RuleItem ok={matchOK} label="비밀번호 일치" />
           </View>
 
+          {/* 에러 박스 */}
+          {errorMsg && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorBoxTitle}>오류</Text>
+              <Text style={styles.errorBoxText}>{errorMsg}</Text>
+            </View>
+          )}
+
           <TouchableOpacity
-            style={[
-              styles.button,
-              (!rules.isValid || !matchOK) && styles.buttonDisabled,
-            ]}
+            style={[styles.button, (loading || !rules.isValid || !matchOK) && styles.buttonDisabled]}
             onPress={handleNext}
-            disabled={!rules.isValid || !matchOK}
+            disabled={loading || !rules.isValid || !matchOK}
           >
-            <Text style={styles.buttonText}>다음</Text>
+            {loading ? (
+              <ActivityIndicator />
+            ) : (
+              <Text style={styles.buttonText}>다음</Text>
+            )}
           </TouchableOpacity>
+
+          {/* 디버그 패널 */}
+          {SHOW_DEBUG && (
+            <View style={styles.debugBox}>
+              <Text style={styles.debugTitle}>디버그</Text>
+              <Text style={styles.debugLabel}>최근 요청 payload</Text>
+              <Text style={styles.debugMono}>
+                {lastReq ? JSON.stringify(lastReq, null, 2) : '(아직 전송된 요청 없음)'}
+              </Text>
+
+              <Text style={[styles.debugLabel, { marginTop: 12 }]}>
+                서버 응답{lastRes ? ` (status ${lastRes.status})` : ''}
+              </Text>
+              <Text style={styles.debugMono}>
+                {lastRes ? (lastRes.body?.length ? lastRes.body : '(본문 없음)') : '(아직 응답 없음)'}
+              </Text>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </ScrollView>
@@ -171,83 +293,35 @@ function RuleItem({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  // ScrollView 전체
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: '#fff',
-  },
-  // KAV 레이아웃
-  kav: { flex: 1 },
-  // 실제 콘텐츠 컨테이너
-  content: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    backgroundColor: '#fff',
-  },
+const mono = Platform.select({ ios: 'Menlo', android: 'monospace' }) as string;
 
+const styles = StyleSheet.create({
+  scrollContent: { flexGrow: 1, backgroundColor: '#fff' },
+  kav: { flex: 1 },
+  content: { flex: 1, paddingTop: 60, paddingHorizontal: 24, paddingBottom: 32, backgroundColor: '#fff' },
   backButton: { marginBottom: 20 },
   textContainer: { marginBottom: 28 },
-
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    fontFamily: 'SUIT-Bold',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    fontFamily: 'SUIT-Regular',
-    marginTop: 6,
-  },
-
-  inputWrapper: {
-    position: 'relative',
-    marginBottom: 12,
-  },
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingRight: 40, // 👁️ 아이콘 공간
-    fontFamily: 'SUIT-Regular',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 0,
-    top: '50%',
-    transform: [{ translateY: -12 }],
-    padding: 4,
-  },
-
-  error: {
-    color: '#E5484D',
-    fontSize: 13,
-    marginTop: 4,
-    marginBottom: 8,
-    fontFamily: 'SUIT-Regular',
-  },
-
-  ruleList: { marginTop: 8, marginBottom: 24 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#000', fontFamily: 'SUIT-Bold' },
+  subtitle: { fontSize: 16, color: '#555', fontFamily: 'SUIT-Regular', marginTop: 6 },
+  inputWrapper: { position: 'relative', marginBottom: 12 },
+  input: { borderBottomWidth: 1, borderBottomColor: '#ccc', fontSize: 16, paddingVertical: 12, paddingRight: 40, fontFamily: 'SUIT-Regular' },
+  eyeButton: { position: 'absolute', right: 0, top: '50%', transform: [{ translateY: -12 }], padding: 4 },
+  errorInline: { color: '#E5484D', fontSize: 13, marginTop: 4, marginBottom: 8, fontFamily: 'SUIT-Regular' },
+  ruleList: { marginTop: 8, marginBottom: 16 },
   ruleItem: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   ruleText: { fontSize: 14, color: '#777', fontFamily: 'SUIT-Regular' },
   ruleTextOk: { color: '#333', fontFamily: 'SUIT-Bold' },
 
-  button: {
-    backgroundColor: '#4E41FF',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
+  button: { backgroundColor: '#4E41FF', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 8 },
   buttonDisabled: { opacity: 0.4 },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'SUIT-Bold',
-  },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16, fontFamily: 'SUIT-Bold' },
+
+  errorBox: { backgroundColor: '#FEECEC', borderColor: '#F5C2C7', borderWidth: 1, padding: 12, borderRadius: 8, marginTop: 8 },
+  errorBoxTitle: { fontWeight: 'bold', color: '#B42318', marginBottom: 4 },
+  errorBoxText: { color: '#B42318' },
+
+  debugBox: { marginTop: 16, padding: 12, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, backgroundColor: '#FAFAFA' },
+  debugTitle: { fontWeight: 'bold', marginBottom: 8, color: '#111' },
+  debugLabel: { fontWeight: '600', marginBottom: 4, color: '#444' },
+  debugMono: { fontFamily: mono, fontSize: 12, color: '#222' },
 });

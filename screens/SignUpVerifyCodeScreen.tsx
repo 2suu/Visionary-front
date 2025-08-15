@@ -1,167 +1,188 @@
+// screens/SignUpVerifyCodeScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  Alert, KeyboardAvoidingView, Platform, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { useSignUpStore } from '../stores/useSignUpStore'; //Zustand import
+import { useSignUp } from '../screens/signup-context';
+
+// 상단에 헬퍼 추가
+const VERIFY_PATHS = [
+  '/api/auth/verify-confirm',
+  '/auth/verify-confirm',
+  '/api/auth/verifyCode',
+  '/auth/verifyCode',
+  '/api/auth/confirm',
+  '/auth/confirm',
+  '/api/auth/verify',     // 혹시 간단 버전
+  '/auth/verify',
+  // 마지막에 기존 경로도 남겨둠 (로그 참고용)
+  '/api/auth/verify-code',
+];
+
+async function postJsonWithFallback(base: string, paths: string[], payload: any) {
+  for (const p of paths) {
+    try {
+      const res = await fetch(`${base}${p}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log('[VERIFY TRY]', p, res.status, json ?? text);
+
+      if (res.ok || json?.ok === true || json?.status === 200 || json?.응답코드 === 200) {
+        return { ok: true, path: p, res, json: json ?? text };
+      }
+    } catch (e) {
+      console.log('[VERIFY ERROR]', p, e);
+    }
+  }
+  return { ok: false, path: null, res: null, json: null };
+}
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
 
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
-  const { name, rrn, tel } = useSignUpStore(); // 값 가져오기
+  const { data } = useSignUp();
+  const { transactionId } = data; // ✅ 이제 이 값만 필요
 
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(180);
   const [expired, setExpired] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // 값 없으면 뒤로 보내기
+  // 필수값 없으면 이전 화면으로
   useEffect(() => {
-    if (!name || !rrn || !tel) {
-      Alert.alert('잘못된 접근', '이전 단계 정보가 없습니다.');
+    if (!transactionId) {
+      Alert.alert('잘못된 접근', '인증 요청 정보가 없습니다.');
       router.replace('/signup-verify');
     }
-  }, []);
+  }, [transactionId]);
 
-  // ⏱️ 3분 타이머
+  // 타이머
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setExpired(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (timer <= 0) {
+      setExpired(true);
+      return;
+    }
+    const id = setInterval(() => setTimer((t) => t - 1), 1000);
+    return () => clearInterval(id);
+  }, [timer]);
 
-  const formatTime = () => {
-    const m = String(Math.floor(timer / 60)).padStart(2, '0');
-    const s = String(timer % 60).padStart(2, '0');
+  const mmss = useMemo(() => {
+    const m = Math.floor(timer / 60).toString().padStart(2, '0');
+    const s = (timer % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
-  };
+  }, [timer]);
 
-  const handleVerify = () => {
-    if (!code.trim()) {
-      Alert.alert('오류', '인증번호를 입력해주세요.');
+  // ✅ 인증번호 검증
+  const handleVerify = async () => {
+    const c = code.trim();
+    if (!c || c.length < 4) {
+      Alert.alert('알림', '인증번호를 입력해주세요.');
       return;
     }
     if (expired) {
-      Alert.alert('시간 초과', '인증 시간이 초과되었습니다.');
+      Alert.alert('만료', '인증시간이 지났습니다. 다시 시도해주세요.');
       return;
     }
-    Alert.alert('성공', '인증이 완료되었습니다.');
-    router.push('/signup-nickname');
+
+    try {
+      setLoading(true);
+
+      const payload = {
+        transactionId: transactionId,
+        verificationCode: c, // DTO 필드명과 동일
+      };
+
+      console.log('[VERIFY REQ]', payload);
+
+      const res = await fetch(`${API_BASE}/api/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log('[VERIFY RES]', res.status, json ?? text);
+
+      if (res.ok) {
+        router.replace('/signup-nickname');
+      } else {
+        const msg =
+          json?.message ||
+          (res.status === 403 ? '인증번호가 틀렸거나 만료되었습니다.' : '인증 실패');
+        Alert.alert('실패', msg);
+      }
+    } catch (e: any) {
+      Alert.alert('오류', e?.message ?? '네트워크 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <KeyboardAvoidingView
-        style={styles.kav}
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        <View style={styles.content}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </TouchableOpacity>
+        <Text style={styles.title}>인증번호 입력</Text>
+        <Text style={styles.subtitle}>휴대폰으로 전송된 인증번호를 입력해주세요</Text>
 
-          <Text style={styles.title}>인증번호 확인</Text>
-          <Text style={styles.subtitle}>3분 내로 받은 인증번호를 입력해주세요</Text>
-
+        <View style={styles.inputRow}>
           <TextInput
-            placeholder="인증번호 (4자리)"
-            maxLength={4}
-            keyboardType="numeric"
             value={code}
             onChangeText={setCode}
+            placeholder="인증번호"
+            keyboardType="number-pad"
+            maxLength={6}
             style={styles.input}
-            placeholderTextColor="#aaa"
-            returnKeyType="done"
-            textContentType="oneTimeCode"
+            editable={!expired && !loading}
           />
-
-          <Text style={styles.timerText}>
-            남은 시간: {expired ? '시간 초과' : formatTime()}
+          <Text style={[styles.timer, expired && { color: '#E53935' }]}>
+            {expired ? '만료' : mmss}
           </Text>
-
-          <TouchableOpacity style={styles.button} onPress={handleVerify}>
-            <Text style={styles.buttonText}>확인</Text>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={[styles.button, (expired || loading) && { opacity: 0.6 }]}
+          onPress={handleVerify}
+          disabled={expired || loading}
+        >
+          <Text style={styles.buttonText}>{loading ? '확인 중...' : '확인'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8 }}>
+          <Ionicons name="chevron-back" size={16} color="#888" />
+          <Text style={{ color: '#888' }}> 뒤로가기</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: '#fff',
-  },
-  kav: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  backButton: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: 'SUIT-Bold',
-    marginBottom: 8,
-    color: '#000',
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: 'SUIT-Regular',
-    color: '#666',
-    marginBottom: 24,
-  },
+  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  title: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    fontSize: 20,
-    paddingVertical: 12,
-    marginBottom: 20,
-    textAlign: 'center',
-    fontFamily: 'SUIT-Regular',
-    color: '#000',
+    flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 14, fontSize: 16,
   },
-  timerText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    fontFamily: 'SUIT-Regular',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
+  timer: { width: 56, textAlign: 'right', fontWeight: '600' },
   button: {
-    backgroundColor: '#4E41FF',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
+    marginTop: 16, backgroundColor: '#4E41FF', paddingVertical: 14,
+    borderRadius: 10, alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'SUIT-Bold',
-  },
+  buttonText: { color: '#fff', fontWeight: '700' },
 });
