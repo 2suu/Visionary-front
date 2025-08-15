@@ -8,32 +8,69 @@ import {
 } from 'react-native';
 import { useSignUp } from '../screens/signup-context';
 
+// 상단에 헬퍼 추가
+const VERIFY_PATHS = [
+  '/api/auth/verify-confirm',
+  '/auth/verify-confirm',
+  '/api/auth/verifyCode',
+  '/auth/verifyCode',
+  '/api/auth/confirm',
+  '/auth/confirm',
+  '/api/auth/verify',     // 혹시 간단 버전
+  '/auth/verify',
+  // 마지막에 기존 경로도 남겨둠 (로그 참고용)
+  '/api/auth/verify-code',
+];
+
+async function postJsonWithFallback(base: string, paths: string[], payload: any) {
+  for (const p of paths) {
+    try {
+      const res = await fetch(`${base}${p}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const text = await res.text();
+      let json: any = null;
+      try { json = JSON.parse(text); } catch {}
+      console.log('[VERIFY TRY]', p, res.status, json ?? text);
+
+      if (res.ok || json?.ok === true || json?.status === 200 || json?.응답코드 === 200) {
+        return { ok: true, path: p, res, json: json ?? text };
+      }
+    } catch (e) {
+      console.log('[VERIFY ERROR]', p, e);
+    }
+  }
+  return { ok: false, path: null, res: null, json: null };
+}
+
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
 
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
   const { data } = useSignUp();
-  const { name, rrn7, carrier, phone, transactionId } = data;
+  const { transactionId } = data; // ✅ 이제 이 값만 필요
 
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(180);
   const [expired, setExpired] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 필수값 없으면 이전 화면으로
   useEffect(() => {
-    if (!name || !rrn7 || !phone) {
-      Alert.alert('잘못된 접근', '본인인증 정보가 없습니다.');
+    if (!transactionId) {
+      Alert.alert('잘못된 접근', '인증 요청 정보가 없습니다.');
       router.replace('/signup-verify');
+    }
+  }, [transactionId]);
+
+  // 타이머
+  useEffect(() => {
+    if (timer <= 0) {
+      setExpired(true);
       return;
     }
-    if (!transactionId) {
-      Alert.alert('안내', '인증번호 요청 정보가 없습니다. 다시 받아주세요.');
-      router.replace('/signup-verify');
-    }
-  }, [name, rrn7, phone, transactionId]);
-
-  useEffect(() => {
-    if (timer <= 0) { setExpired(true); return; }
     const id = setInterval(() => setTimer((t) => t - 1), 1000);
     return () => clearInterval(id);
   }, [timer]);
@@ -44,98 +81,46 @@ export default function SignUpVerifyCodeScreen() {
     return `${m}:${s}`;
   }, [timer]);
 
+  // ✅ 인증번호 검증
   const handleVerify = async () => {
     const c = code.trim();
     if (!c || c.length < 4) {
-      Alert.alert('알림', '인증번호를 정확히 입력해주세요.');
+      Alert.alert('알림', '인증번호를 입력해주세요.');
       return;
     }
     if (expired) {
-      Alert.alert('만료됨', '시간이 만료되었습니다. 다시 받아주세요.');
+      Alert.alert('만료', '인증시간이 지났습니다. 다시 시도해주세요.');
       return;
     }
 
     try {
       setLoading(true);
 
-      // ✅ 서버가 한글 키를 기대할 가능성이 높음 → 한글 키로 전달
-      // ✅ tx id 키도 모든 후보를 같이 보냄(고유Id, txId, transactionId)
       const payload = {
-        이름: name,
-        주민등록번호: rrn7,
-        통신사: carrier,
-        전화번호: phone,
-        인증번호: c,
-        고유Id: transactionId,
-        txId: transactionId,
         transactionId: transactionId,
+        verificationCode: c, // DTO 필드명과 동일
       };
 
       console.log('[VERIFY REQ]', payload);
 
-      const res = await fetch(`${API_BASE}/api/auth/verify-code`, {
+      const res = await fetch(`${API_BASE}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 서버가 세션 쿠키 기반이면 주석 해제
-         credentials: 'include',
         body: JSON.stringify(payload),
       });
 
       const text = await res.text();
-      console.log('[VERIFY RES]', res.status, text);
       let json: any = null;
       try { json = JSON.parse(text); } catch {}
       console.log('[VERIFY RES]', res.status, json ?? text);
 
-      const httpOk = res.status === 200;
-      const bodyOk = json?.응답코드 === 200 || json?.status === 200 || json?.ok === true;
-
-      if (httpOk || bodyOk) {
+      if (res.ok) {
         router.replace('/signup-nickname');
       } else {
         const msg =
-          json?.응답메세지 ||
           json?.message ||
-          (res.status === 403 ? '검증 권한이 없거나 요청 형식이 맞지 않습니다.' : '인증 실패');
+          (res.status === 403 ? '인증번호가 틀렸거나 만료되었습니다.' : '인증 실패');
         Alert.alert('실패', msg);
-      }
-    } catch (e: any) {
-      Alert.alert('오류', e?.message ?? '네트워크 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resend = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/api/auth/send-code`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          이름: name,
-          주민등록번호: rrn7,
-          통신사: carrier,
-          전화번호: phone,
-        }),
-      });
-      const text = await res.text();
-      let json: any = null;
-      try { json = JSON.parse(text); } catch {}
-      console.log('[RESEND RES]', res.status, json ?? text);
-
-      if (res.status === 200 || json?.응답코드 === 200) {
-        Alert.alert('안내', json?.응답메세지 ?? '인증번호가 재전송되었습니다.');
-        setTimer(180);
-        setExpired(false);
-        setCode('');
-        // 재전송 시 새로운 고유Id가 나오면 갱신 필요
-        // if (json?.고유Id || json?.txId || json?.transactionId) {
-        //   setField('transactionId', String(json.고유Id || json.txId || json.transactionId));
-        // }
-      } else {
-        Alert.alert('실패', json?.응답메세지 ?? '재전송에 실패했습니다.');
       }
     } catch (e: any) {
       Alert.alert('오류', e?.message ?? '네트워크 오류가 발생했습니다.');
@@ -151,7 +136,7 @@ export default function SignUpVerifyCodeScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Text style={styles.title}>인증번호 입력</Text>
-        <Text style={styles.subtitle}>{phone} 로 받은 코드를 입력하세요</Text>
+        <Text style={styles.subtitle}>휴대폰으로 전송된 인증번호를 입력해주세요</Text>
 
         <View style={styles.inputRow}>
           <TextInput
@@ -176,14 +161,9 @@ export default function SignUpVerifyCodeScreen() {
           <Text style={styles.buttonText}>{loading ? '확인 중...' : '확인'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={resend} disabled={loading}>
-          <Text style={styles.resend}>인증번호 다시 받기</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8 }}>
-          <Text style={{ color: '#888' }}>
-            <Ionicons name="chevron-back" size={16} /> 뒤로가기
-          </Text>
+          <Ionicons name="chevron-back" size={16} color="#888" />
+          <Text style={{ color: '#888' }}> 뒤로가기</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </ScrollView>
@@ -205,5 +185,4 @@ const styles = StyleSheet.create({
     borderRadius: 10, alignItems: 'center',
   },
   buttonText: { color: '#fff', fontWeight: '700' },
-  resend: { marginTop: 12, color: '#4E41FF', fontWeight: '600' },
 });
