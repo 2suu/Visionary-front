@@ -101,7 +101,7 @@ export default function ConfirmScreen() {
 
   const onConfirm = () => {
     // TODO: 추후 서버 저장 연결 예정
-    router.replace('/(tabs)/home');
+    router.replace('/survey/intro');
   };
 
   return (
