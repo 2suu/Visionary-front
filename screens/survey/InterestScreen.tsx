@@ -5,17 +5,13 @@ import { Alert, StyleSheet, Text, TextInput } from 'react-native';
 import QuestionWrapper from '../../screens/survey/QuestionWrapper';
 import { useSurvey } from '../../screens/survey/survey-context';
 
-const PRIMARY = '#4E41FF';
-const BG = '#FFFFFF';
-const PAD = 20;
-
 export default function Q45Screen() {
   const { data, setField } = useSurvey();
-  const { mode, return: returnTo } = useLocalSearchParams<{ mode?: string; return?: string }>();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isEdit = mode === 'edit';
 
   // 저장된 값 복원
-  const [text, setText] = useState(() => data.interestField ?? '');
+  const [text, setText] = useState(() => (data.interestField ?? '').toString());
 
   const tokens = useMemo(
     () => text.split(',').map(t => t.trim()).filter(Boolean),
@@ -32,9 +28,11 @@ export default function Q45Screen() {
     setField('interestField', tokens.join(', '));
 
     if (isEdit) {
-      router.replace('/survey/confirm' as const);     // 수정 모드 → 바로 확인 화면 복귀
+      // 수정 모드 → 확인 화면의 '관심분야(field)' 탭으로 복귀
+      router.replace('/survey/confirm?tab=field' as const);
     } else {
-      router.replace('/survey/q/46' as const);        // 일반 흐름 → 다음 문항
+      // 일반 흐름 → 다음 문항
+      router.replace('/survey/q/46' as const);
     }
   };
 
@@ -43,10 +41,9 @@ export default function Q45Screen() {
       title="Q45. 진로 선택에 있어 흥미를 느끼는 분야는 무엇인가요?"
       progressText="45/47"
       progressPct={(45 / 47) * 100}
-      onNext={onSave}               // ✅ 하단 “확인”이 저장 트리거
-      disabled={!isValid}           // ✅ 형식 안 맞으면 비활성화
-      paddingHorizontal={PAD}
-      backgroundColor={BG}
+      onNext={onSave}     // ✅ 하단 “확인” 버튼 동작 (presurvey와 동일)
+      disabled={!isValid} // ✅ 2~3개가 아닐 경우 버튼 비활성화
+      // topPadding, gapAfterTitle은 QuestionWrapper 기본값(=presurvey 기준) 사용
     >
       <Text style={styles.desc}>
         관심 있는 분야를 <Text style={styles.bold}>단답형</Text>으로 작성해주세요.{'\n'}
@@ -60,7 +57,7 @@ export default function Q45Screen() {
         placeholderTextColor="#B7B7B7"
         style={[styles.input, (tokens.length > 0 && !isValid) && styles.inputError]}
         returnKeyType="done"
-        onSubmitEditing={onSave}     // 엔터로도 저장
+        onSubmitEditing={onSave} // 엔터로도 저장
         autoCorrect={false}
         autoCapitalize="none"
       />
@@ -74,8 +71,12 @@ const styles = StyleSheet.create({
   desc: { color: '#666', fontSize: 13, lineHeight: 20, marginTop: 4, marginBottom: 14 },
   bold: { fontWeight: '700', color: '#444' },
   input: {
-    borderBottomWidth: 2, borderBottomColor: '#DDDDDD',
-    paddingVertical: 10, fontSize: 16, color: '#111', minHeight: 40,
+    borderBottomWidth: 2,
+    borderBottomColor: '#DDDDDD',
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#111',
+    minHeight: 40,
   },
   inputError: { borderBottomColor: '#E53935' },
   hint: { color: '#8A8A8A', fontSize: 12, marginTop: 8 },
