@@ -14,6 +14,9 @@ import { LIKERT_QUESTIONS } from './questions';
 import { useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
+// 파일 상단 import들 아래 적당한 곳에 추가
+const HOME_ROUTE = '/(tabs)/home'; // ← 프로젝트 구조에 맞게 '/(tabs)' 또는 '/' 등으로 변경
+
 
 // Likert 값 라벨 매핑
 const LIKERT_LABELS: Record<1|2|3|4|5, string> = {
@@ -164,14 +167,17 @@ const goEdit = (no: number) => {
     </View>
   );
 
-  const Footer = (
-    <View style={styles.footer}>
-      <Text style={styles.hint}>수정을 원하는 부분이 있다면 ✏️를 눌러주세요.</Text>
-      <TouchableOpacity style={styles.confirmBtn} onPress={() => router.back()}>
-        <Text style={styles.confirmBtnText}>확인</Text>
-      </TouchableOpacity>
-    </View>
-  );
+const Footer = (
+  <View style={styles.footer}>
+    <Text style={styles.hint}>수정을 원하는 부분이 있다면 ✏️를 눌러주세요.</Text>
+    <TouchableOpacity
+      style={styles.confirmBtn}
+      onPress={() => router.replace(HOME_ROUTE)}  // ← 여기만 수정
+    >
+      <Text style={styles.confirmBtnText}>확인</Text>
+    </TouchableOpacity>
+  </View>
+);
 
   return (
     <SafeAreaView style={styles.safe}>
