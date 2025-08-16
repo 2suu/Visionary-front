@@ -54,7 +54,7 @@ export default function SurveyIntro() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white', paddingHorizontal: 20, paddingBottom: 20, alignItems: 'center' },
+  container: { flex: 1, backgroundColor: 'white', paddingHorizontal: 24, paddingBottom: 20, alignItems: 'center' },
   headerSpace: { height: 32 },
   title: { fontSize: 20, fontWeight: '700', marginTop: 4, textAlign: 'center' },
   subtitle: { fontSize: 13, color: '#666', marginTop: 6, marginBottom: 8, textAlign: 'center' },
@@ -76,19 +76,30 @@ const styles = StyleSheet.create({
   bulletText: { flex: 1, fontSize: 13, color: '#444' },
 
   startBtn: {
-    width: '93%',
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: PRIMARY,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  startText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  width: '100%',
+  maxWidth: 320,         // 📱 iPhone 15 기준 안정된 폭
+  borderRadius: 12,
+  backgroundColor: PRIMARY,
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 16,   // ⬅️ 높이 padding으로 통일
+  alignSelf: 'center',
+
+  // 위치 조정
+  marginTop: 'auto',     // ⬅️ 화면 하단으로 밀어내기
+  marginBottom: 24,      // ⬅️ SafeArea + 여백
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 3,
+},
+startText: {
+  color: 'white',
+  fontSize: 18,          // “다음” 버튼과 동일
+  fontWeight: '600',
+},
+
+
 
   helper: { fontSize: 12, color: '#8A8A8A', marginTop: 10, textAlign: 'center' },
 });

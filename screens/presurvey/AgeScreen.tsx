@@ -1,5 +1,5 @@
 // screens/presurvey/AgeScreen.tsx
-import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -9,7 +9,9 @@ const PRIMARY = '#4E41FF';
 
 export default function AgeScreen() {
   const { data, setData } = useSurvey();
-  const { from } = useLocalSearchParams<{ from?: string }>(); // ⬅ 추가
+  const params = useLocalSearchParams<{ from?: string | string[] }>();
+  const from = Array.isArray(params.from) ? params.from[0] : params.from; // ← 안전하게 정규화
+
   const [age, setAge] = useState<string>(data.age ? String(data.age) : '');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -19,9 +21,8 @@ export default function AgeScreen() {
     return () => clearTimeout(t);
   }, []);
 
-  // ⬅ 공통 이동 함수
-  // (타입 깔끔히 가려면: const goNext = (nextRoute: (typeof ROUTES)[keyof typeof ROUTES]) => { ... })
-  const goNext = (nextRoute: string) => {
+  // ROUTES 값만 허용
+  const goNext = (nextRoute: (typeof ROUTES)[keyof typeof ROUTES]) => {
     if (from === 'confirm') {
       router.replace(ROUTES.confirm);
     } else {
@@ -39,11 +40,17 @@ export default function AgeScreen() {
     setError(null);
     setData({ age: n });
     Keyboard.dismiss();
-    goNext(ROUTES.gender); // ⬅ 교체
+    goNext(ROUTES.gender);
   };
 
   return (
-    <QuestionWrapper question="당신의 나이를 알려주세요" onNext={onNext} error={error}>
+    <QuestionWrapper
+      question="당신의 나이를 알려주세요"
+      onNext={onNext}
+      error={error}
+      topPadding={140}        // 상단 여백
+      gapAfterQuestion={24}  // 질문 아래 간격
+    >
       <View style={styles.row}>
         <TextInput
           ref={inputRef}
@@ -63,7 +70,13 @@ export default function AgeScreen() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginTop: 32, width: '100%', paddingHorizontal: 8 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',  // 밑줄 기준 정렬
+    width: '100%',
+    paddingHorizontal: 8,
+    marginTop: 16,  
+  },
   input: {
     flex: 1,
     borderBottomWidth: 1.5,
@@ -72,5 +85,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginRight: 8,
   },
-  suffix: { fontSize: 16, color: '#444' },
+  suffix: {
+    fontSize: 16,
+    color: '#444',
+    paddingBottom: 10,       // 밑줄 라인과 자연스럽게
+  },
 });
