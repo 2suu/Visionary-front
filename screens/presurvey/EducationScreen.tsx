@@ -1,5 +1,5 @@
 // screens/presurvey/EducationScreen.tsx
-import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
@@ -14,11 +14,14 @@ const OPTIONS = [
 ] as const;
 type UiEdu = (typeof OPTIONS)[number];
 
+// ⬅️ ROUTES 값 유니온 타입으로 라우트 안전하게
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+
 const PRIMARY = '#4E41FF';
 
 export default function EducationScreen() {
   const { data, setData } = useSurvey();
-  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>();
 
   // 저장값 → UI 라벨 역매핑
   const initialUi = useMemo<UiEdu | null>(() => {
@@ -36,9 +39,8 @@ export default function EducationScreen() {
   const [value, setValue] = useState<UiEdu | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
 
-  // ⬅ 공통 이동 함수
-  // 타입 빡세게: const goNext = (next: (typeof ROUTES)[keyof typeof ROUTES]) => { ... }
-  const goNext = (next: string) => {
+  // ⬅️ 타입 안전한 이동 함수 (TS 2345 해결)
+  const goNext = (next: RoutePath) => {
     if (from === 'confirm') {
       router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
     } else {
@@ -62,11 +64,17 @@ export default function EducationScreen() {
       '대학원 이상';
 
     setData({ education: clean });
-    goNext(ROUTES.experience); // ⬅ 교체
+    goNext(ROUTES.experience);
   };
 
   return (
-    <QuestionWrapper question="당신의 최종 학력은 어떻게 되나요?" onNext={onNext} error={error}>
+    <QuestionWrapper
+      question="당신의 최종 학력은 어떻게 되나요?"
+      onNext={onNext}
+      error={error}
+      topPadding={140}        // 상단 여백
+      gapAfterQuestion={24}  // ⬅️ 질문 아래 간격
+    >
       <View style={styles.list}>
         {OPTIONS.map((opt) => {
           const active = value === opt;
@@ -76,6 +84,9 @@ export default function EducationScreen() {
               style={[styles.item, active && styles.itemActive]}
               onPress={() => setValue(opt)}
               activeOpacity={0.9}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
             >
               <Text style={[styles.itemText, active && styles.itemTextActive]}>{opt}</Text>
             </TouchableOpacity>
@@ -87,8 +98,15 @@ export default function EducationScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { width: '100%', marginTop: 8, gap: 12 },
+  // QuestionWrapper 내부 paddingLeft: 8과 좌우 정렬 맞춤
+  list: {
+    width: '100%',
+    paddingHorizontal: 8,
+    marginTop: 8,
+    rowGap: 12,          // RN 0.73+ 지원. 구버전이면 아래 marginBottom 사용
+  },
   item: {
+    width: '100%',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -99,6 +117,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    marginBottom: 12,    // rowGap 미지원일 때 대비
   },
   itemActive: { borderColor: PRIMARY, backgroundColor: '#F5F3FF', shadowOpacity: 0.12 },
   itemText: { fontSize: 16, color: '#111' },
