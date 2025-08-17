@@ -1,11 +1,18 @@
+// screens/presurvey/ConfirmScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ROUTES, useSurvey } from '../../screens/presurvey/survey-context'; // ⬅️ 여기서 import
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ROUTES, useSurvey } from '../../screens/presurvey/survey-context';
+
 const PRIMARY = '#4E41FF';
 
-type RoutePath = typeof ROUTES[keyof typeof ROUTES];
+// ✅ 타입 안전 (괄호 필수)
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+
+// 왼쪽(아이콘+라벨) 고정 폭: 이 값만 조절하면 전체 정렬이 같이 움직여요.
+const LABEL_COL_WIDTH = 120;
 
 type RowBase = {
   icon: string;
@@ -40,6 +47,8 @@ type RowEmotion = RowBase & {
 type Row = RowSingle | RowPair | RowEmotion;
 
 export default function ConfirmScreen() {
+  const insets = useSafeAreaInsets();
+  const CTA_HEIGHT = 52;
   const { data, formatExperience } = useSurvey();
 
   const expText = useMemo(() => {
@@ -63,7 +72,7 @@ export default function ConfirmScreen() {
         route: data.hasExperience ? ROUTES.experienceDetail : ROUTES.experience,
       },
 
-      // 경제적 상황 (저축/생활비) — 짧은 라벨 사용
+      // 💰 경제적상황: 2줄(저축/생활비) + 각 줄 개별 ✏️
       {
         icon: '💰',
         label: '경제적상황',
@@ -78,9 +87,9 @@ export default function ConfirmScreen() {
       { icon: '👥', label: '대인관계', value: data.relationFreq ?? '미입력', route: ROUTES.relationship },
       { icon: '🤝', label: '관계 스타일', value: data.relationStyle ?? '미입력', route: ROUTES.relationship },
 
-      // 정서 (감정기복/스트레스) — 짧은 라벨 사용
+      // 🧠 정서: 감정기복/스트레스 (각 줄 개별 ✏️)
       {
-        icon: '🧠',
+        icon: '💖',
         label: '정서',
         kind: 'emotion',
         moodLabel: '감정기복',
@@ -106,7 +115,17 @@ export default function ConfirmScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingTop: 64 + insets.top,
+            paddingBottom: 20 + insets.bottom + CTA_HEIGHT + 16,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>‘나’는 누굴까?</Text>
         <Text style={styles.sub}>아래 정보가 나와 맞는지 확인해 주세요.</Text>
 
@@ -114,36 +133,51 @@ export default function ConfirmScreen() {
           {rows.map((r, idx) => {
             const divider = idx !== rows.length - 1 && styles.rowDivider;
 
+            // 🧠 정서 (2줄 + 각 줄 개별 ✏️)
             if (r.kind === 'emotion') {
               const moodLabel = r.moodLabel ?? '감정기복';
               const stressLabel = r.stressLabel ?? '스트레스';
               return (
                 <View key={`${r.label}-${idx}`} style={[styles.row, divider]}>
-                  <View style={styles.left}>
+                  <View style={styles.leftCol}>
                     <Text style={styles.icon}>{r.icon}</Text>
                     <Text style={styles.label}>{r.label}</Text>
                   </View>
 
-                  <View style={styles.rightBlock}>
-                    <View style={styles.multiLineRow}>
-                      <Text style={styles.subKey}>{moodLabel}</Text>
-                      <TouchableOpacity onPress={() => goEdit(r.moodRoute)} activeOpacity={0.85} style={styles.valueFlex}>
-                        <Text style={styles.value} numberOfLines={1}>{r.mood}</Text>
-                      </TouchableOpacity>
-                      <View style={styles.editBox}>
-                        <TouchableOpacity onPress={() => goEdit(r.moodRoute)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <View style={styles.rightBlockRow}>
+                    <View style={styles.rightCol}>
+                      <View style={styles.multiLineRow}>
+                        <Text style={styles.subKey}>{moodLabel}</Text>
+                        <TouchableOpacity onPress={() => goEdit(r.moodRoute)} activeOpacity={0.85} style={styles.valueFlex}>
+                          <Text style={styles.valueLeft} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                            {r.mood}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* ✏️ 감정기복 전용 */}
+                        <TouchableOpacity
+                          onPress={() => goEdit(r.moodRoute)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.editInline}
+                        >
                           <Ionicons name="pencil" size={16} color="#8A8AA0" />
                         </TouchableOpacity>
                       </View>
-                    </View>
 
-                    <View style={styles.multiLineRow}>
-                      <Text style={styles.subKey}>{stressLabel}</Text>
-                      <TouchableOpacity onPress={() => goEdit(r.stressRoute)} activeOpacity={0.85} style={styles.valueFlex}>
-                        <Text style={styles.value} numberOfLines={1}>{r.stress}</Text>
-                      </TouchableOpacity>
-                      <View style={styles.editBox}>
-                        <TouchableOpacity onPress={() => goEdit(r.stressRoute)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <View style={styles.multiLineRow}>
+                        <Text style={styles.subKey}>{stressLabel}</Text>
+                        <TouchableOpacity onPress={() => goEdit(r.stressRoute)} activeOpacity={0.85} style={styles.valueFlex}>
+                          <Text style={styles.valueLeft} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                            {r.stress}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* ✏️ 스트레스 전용 */}
+                        <TouchableOpacity
+                          onPress={() => goEdit(r.stressRoute)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.editInline}
+                        >
                           <Ionicons name="pencil" size={16} color="#8A8AA0" />
                         </TouchableOpacity>
                       </View>
@@ -153,50 +187,85 @@ export default function ConfirmScreen() {
               );
             }
 
+            // 💰 경제적상황 (2줄 + 각 줄 개별 ✏️)
             if (r.kind === 'pair') {
               return (
                 <View key={`${r.label}-${idx}`} style={[styles.row, divider]}>
-                  <TouchableOpacity style={styles.left} activeOpacity={0.85} onPress={() => goEdit(r.route)}>
+                  <TouchableOpacity style={styles.leftCol} activeOpacity={0.85} onPress={() => goEdit(r.route)}>
                     <Text style={styles.icon}>{r.icon}</Text>
                     <Text style={styles.label}>{r.label}</Text>
                   </TouchableOpacity>
 
-                  <View style={styles.rightWrap}>
-                    <View style={styles.valueRow}>
-                      <TouchableOpacity onPress={() => goEdit(r.route)} activeOpacity={0.85}>
-                        <Text style={styles.value} numberOfLines={1}>{r.value}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => goEdit(r.route2)} activeOpacity={0.85}>
-                        <Text style={styles.value} numberOfLines={1}>{r.value2}</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.editBox}>
-                      <TouchableOpacity onPress={() => goEdit(r.route)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                        <Ionicons name="pencil" size={16} color="#8A8AA0" />
-                      </TouchableOpacity>
+                  <View style={styles.rightBlockRow}>
+                    <View style={styles.rightCol}>
+                      <View style={styles.multiLineRow}>
+                        <Text style={styles.subKey}>저축</Text>
+                        <TouchableOpacity onPress={() => goEdit(r.route)} activeOpacity={0.85} style={styles.valueFlex}>
+                          <Text style={styles.valueLeft} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                            {r.value}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* ✏️ 저축 전용 */}
+                        <TouchableOpacity
+                          onPress={() => goEdit(r.route)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.editInline}
+                        >
+                          <Ionicons name="pencil" size={16} color="#8A8AA0" />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.multiLineRow}>
+                        <Text style={styles.subKey}>생활비</Text>
+                        <TouchableOpacity onPress={() => goEdit(r.route2)} activeOpacity={0.85} style={styles.valueFlex}>
+                          <Text style={styles.valueLeft} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                            {r.value2}
+                          </Text>
+                        </TouchableOpacity>
+
+                        {/* ✏️ 생활비 전용 */}
+                        <TouchableOpacity
+                          onPress={() => goEdit(r.route2)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          style={styles.editInline}
+                        >
+                          <Ionicons name="pencil" size={16} color="#8A8AA0" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 </View>
               );
             }
 
+            // 일반 1줄 (나이/성별/학력/경력/대인관계/관계 스타일)
             return (
               <View key={`${r.label}-${idx}`} style={[styles.row, divider]}>
-                <TouchableOpacity style={styles.left} activeOpacity={0.85} onPress={() => goEdit(r.route)}>
+                <TouchableOpacity style={styles.leftCol} activeOpacity={0.85} onPress={() => goEdit(r.route)}>
                   <Text style={styles.icon}>{r.icon}</Text>
                   <Text style={styles.label}>{r.label}</Text>
                 </TouchableOpacity>
 
-                <View style={styles.rightWrap}>
-                  <View style={styles.valueRow}>
-                    <TouchableOpacity onPress={() => goEdit(r.route)} activeOpacity={0.85}>
-                      <Text style={styles.value} numberOfLines={1}>{r.value}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.editBox}>
-                    <TouchableOpacity onPress={() => goEdit(r.route)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="pencil" size={16} color="#8A8AA0" />
-                    </TouchableOpacity>
+                {/* 오른쪽도 블록 레이아웃로 통일 → 정렬 일관성 */}
+                <View style={styles.rightBlockRow}>
+                  <View style={styles.rightCol}>
+                    <View style={styles.singleLineRow}>
+                      <TouchableOpacity onPress={() => goEdit(r.route)} activeOpacity={0.85} style={styles.valueFlex}>
+                        <Text style={styles.valueLeft} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                          {r.value}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* ✏️ 단일 값 전용 */}
+                      <TouchableOpacity
+                        onPress={() => goEdit(r.route)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        style={styles.editInline}
+                      >
+                        <Ionicons name="pencil" size={16} color="#8A8AA0" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -205,10 +274,13 @@ export default function ConfirmScreen() {
         </View>
 
         <Text style={styles.hint}>수정을 원하는 부분이 있다면 ✍️ 항목을 눌러주세요.</Text>
-        <View style={{ height: 88 }} />
       </ScrollView>
 
-      <TouchableOpacity style={styles.cta} onPress={onConfirm} activeOpacity={0.95}>
+      <TouchableOpacity
+        style={[styles.cta, { bottom: 20 + insets.bottom }]}
+        onPress={onConfirm}
+        activeOpacity={0.95}
+      >
         <Text style={styles.ctaText}>확인</Text>
       </TouchableOpacity>
     </View>
@@ -217,11 +289,27 @@ export default function ConfirmScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
+
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
-  title: { fontSize: 20, fontWeight: '800', color: '#111' },
-  sub: { marginTop: 6, color: '#6A6A76' },
+
+  title: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#111',
+    marginTop: 0,
+    marginBottom: 0,
+    alignSelf: 'stretch',
+    paddingLeft: 8,
+  },
+  sub: {
+    marginTop: 6,
+    color: '#6A6A76',
+    alignSelf: 'stretch',
+    paddingLeft: 8,
+  },
+
   card: {
-    marginTop: 16,
+    marginTop: 30,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E4E5ED',
@@ -233,25 +321,83 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+
+  // 리스트 아이템
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
   rowDivider: { borderBottomWidth: 1, borderBottomColor: '#F0F1F6' },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 8 },
+
+  // ⬅️ 고정 폭 왼쪽 컬럼: 아이콘+라벨
+  leftCol: {
+    width: LABEL_COL_WIDTH,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 8,
+  },
   icon: { fontSize: 16, lineHeight: 18 },
-  label: { fontSize: 14, color: '#2A2A35', fontWeight: '600' },
-  rightWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', maxWidth: '58%' },
-  valueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1, flexGrow: 1, justifyContent: 'flex-end' },
-  value: { fontSize: 14, color: '#3A3A46', lineHeight: 18 },
-  editBox: { width: 28, height: 28, marginLeft: 6, alignItems: 'center', justifyContent: 'center' },
-  rightBlock: { flex: 1, maxWidth: '58%' },
-  multiLineRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
-  subKey: { fontSize: 13, color: '#6A6A76', marginRight: 8, minWidth: 64, lineHeight: 18 },
-  valueFlex: { flex: 1, alignItems: 'flex-end' },
-  hint: { marginTop: 12, textAlign: 'center', color: '#8A8AA0', fontSize: 12 },
+  label: { flexShrink: 1 },
+
+  // ➡️ 오른쪽(값 영역) - 블록 레이아웃 공통
+  rightBlockRow: { flex: 1, flexDirection: 'row', alignItems: 'stretch', minWidth: 0 },
+  rightCol: { flex: 1, minWidth: 0, gap: 4 },
+
+  // 2줄(경제/정서) 각 라인
+  multiLineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 3,
+    minWidth: 0,
+  },
+  // 1줄(일반) 전용
+  singleLineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+
+  // 서브 키(저축/생활비/감정기복/스트레스)
+  subKey: { fontSize: 13, color: '#6A6A76', marginRight: 6, minWidth: 56, lineHeight: 18 },
+
+  // 값
+  valueFlex: { flex: 1, alignItems: 'flex-start', minWidth: 0 },
+  valueLeft: {
+    fontSize: 14,
+    color: '#111',
+    textAlign: 'left',       // ← 왼쪽 정렬 통일
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+
+  // 각 줄 끝 ✏️
+  editInline: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 6,
+  },
+
+  hint: { marginTop: 90, textAlign: 'center', color: '#8A8AA0', fontSize: 12 },
+
+  // 하단 CTA
   cta: {
-    position: 'absolute', left: 20, right: 20, bottom: 20,
-    height: 52, borderRadius: 14, backgroundColor: PRIMARY,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, elevation: 4,
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 20,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   ctaText: { color: 'white', fontSize: 16, fontWeight: '800' },
 });
