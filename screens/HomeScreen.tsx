@@ -107,23 +107,33 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>📍 로드맵 확인하기</Text>
           <TouchableOpacity style={styles.roadmapCard} activeOpacity={0.9}>
             <Image
-              source={require('../assets/images/roadmap.png')}
+              source={require('../assets/images/front.png')}
               style={styles.roadmapImage}
             />
             <View style={styles.roadmapTextBox}>
-              <Text style={styles.roadmapStep}>💡 Step 1</Text>
-              <Text style={styles.roadmapTitle}>관련 학과 진학</Text>
+              <Text style={styles.roadmapStep}>💡 first RoadMap</Text>
+              <Text style={styles.roadmapTitle}>      프론트엔드 개발자가 되려면</Text>
             </View>
           </TouchableOpacity>
 
             {/* Step 2 */}
             <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
-              <Image source={require('../assets/images/coding.png')} style={styles.roadmapImage} />
+              <Image source={require('../assets/images/back.png')} style={styles.roadmapImage} />
               <View style={styles.roadmapTextBox}>
-                <Text style={styles.roadmapStep}>💡 Step 2</Text>
-                <Text style={styles.roadmapTitle}>코딩 기초 학습</Text>
+                <Text style={styles.roadmapStep}>💡 Second RoadMap</Text>
+                <Text style={styles.roadmapTitle}>      백엔드 개발자가 되려면</Text>
               </View>
             </TouchableOpacity>
+
+ {/* Step 2 */}
+            <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
+              <Image source={require('../assets/images/analysis.png')} style={styles.roadmapImage} />
+              <View style={styles.roadmapTextBox}>
+                <Text style={styles.roadmapStep}>💡 Third RoadMap</Text>
+                <Text style={styles.roadmapTitle}>      데이터 분석가가 되려면</Text>
+              </View>
+            </TouchableOpacity>
+
           </View>
       </ScrollView>
     </SafeAreaView>
