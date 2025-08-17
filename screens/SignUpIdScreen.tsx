@@ -1,7 +1,6 @@
 // screens/SignUpIdScreen.tsx
-//백엔드 완성되면 USE_MOCK = false로 바꾸고 주석 해제
+// 백엔드 완성되면 USE_MOCK = false로 바꾸고 주석 해제
 
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -9,6 +8,8 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -31,6 +32,9 @@ const isValidUserId = (s: string) => /^[a-zA-Z0-9._-]{4,20}$/.test(s);
 
 // ⚙️ 개발 단계: 서버 없이 모의 응답 사용
 const USE_MOCK = true;
+
+const PRIMARY = '#4E41FF';
+const INSET = 40;
 
 export default function SignUpIdScreen() {
   const router = useRouter();
@@ -85,9 +89,6 @@ export default function SignUpIdScreen() {
       const text = await res.text();
       const json: any = safeJson(text);
 
-      // 백엔드 응답 호환 처리:
-      // - { available: boolean }  또는
-      // - { exists: boolean }     ⇒ available = !exists
       const available =
         (json && typeof json.available === 'boolean' && json.available) ||
         (json && typeof json.exists === 'boolean' && json.exists === false);
@@ -147,76 +148,138 @@ export default function SignUpIdScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Ionicons name="chevron-back" size={24} color="#333" />
-      </TouchableOpacity>
-
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>좋아요!</Text>
-        <Text style={styles.subtitle}>이제 사용할 아이디를 정해주세요</Text>
-      </View>
-
-      {/* 입력 + 중복확인 버튼 한 줄 */}
-      <View style={styles.row}>
-        <TextInput
-          ref={inputRef}
-          style={[styles.input, { flex: 1 }]}
-          placeholder="아이디 (영문/숫자/._- , 4~20자)"
-          value={userId}
-          onChangeText={(t) => {
-            setUserId(t);
-            setIsAvailable(null); // 입력 변경 시 상태 초기화
-          }}
-          placeholderTextColor="#aaa"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="done"
-          onSubmitEditing={checkUserId}
-          maxLength={20}
-        />
-        <TouchableOpacity
-          style={[styles.checkButton, (checking || navigating) && styles.buttonDisabled]}
-          onPress={checkUserId}
-          disabled={checking || navigating}
-        >
-          <Text style={styles.checkButtonText}>
-            {checking ? '확인중...' : '중복확인'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 상태 메시지 */}
-      {isAvailable === false && <Text style={styles.error}>이미 사용 중인 아이디입니다.</Text>}
-      {isAvailable === true && <Text style={styles.success}>사용 가능한 아이디입니다.</Text>}
-
-      <TouchableOpacity
-        style={[styles.button, (checking || navigating) && styles.buttonDisabled]}
-        onPress={handleConfirm}
-        disabled={checking || navigating}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        <Text style={styles.buttonText}>{navigating ? '이동중...' : '다음'}</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <View style={styles.content}>
+            {/* (선택) 상단 뒤로가기 아이콘 — 필요 없으면 이 블록 삭제 */}
+          
+            {/* 타이틀 — QuestionWrapper 스타일 */}
+            <Text style={styles.title} allowFontScaling={false}>아이디</Text>
+            <Text style={styles.sub} allowFontScaling={false}>좋아요! 영문과 숫자를 섞어 아이디를 정해주세요</Text>
+
+            {/* 입력 + 중복확인 한 줄 */}
+            <View style={styles.row}>
+              <TextInput
+                ref={inputRef}
+                style={[styles.input, { flex: 1 }]}
+                placeholder="아이디 (영문/숫자/._- , 4~20자)"
+                value={userId}
+                onChangeText={(t) => {
+                  setUserId(t);
+                  setIsAvailable(null); // 입력 변경 시 상태 초기화
+                }}
+                placeholderTextColor="#A3A3A3"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={checkUserId}
+                maxLength={20}
+              />
+              <TouchableOpacity
+                style={[styles.checkButton, (checking) && { opacity: 0.6 }]}
+                onPress={checkUserId}
+                disabled={checking}
+              >
+                <Text style={styles.checkButtonText}>
+                  {checking ? '확인중...' : '중복확인'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 상태 메시지 */}
+            {isAvailable === false && <Text style={styles.error}>이미 사용 중인 아이디입니다.</Text>}
+            {isAvailable === true && <Text style={styles.success}>사용 가능한 아이디입니다.</Text>}
+          </View>
+        </ScrollView>
+
+        {/* CTA — QuestionWrapper와 동일 */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            activeOpacity={0.95}
+            style={[styles.cta, (checking || navigating) && styles.ctaDisabled]}
+            onPress={handleConfirm}
+            disabled={checking || navigating}
+          >
+            <Text style={styles.ctaText} allowFontScaling={false}>
+              {navigating ? '이동중...' : '다음'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 60, paddingHorizontal: 24, backgroundColor: '#fff' },
+  scrollContent: { flexGrow: 1, backgroundColor: '#fff' },
+
+  // QuestionWrapper 기준: 아래서 시작 + 좌우 INSET 40
+  content: { paddingTop: 72, paddingHorizontal: INSET, paddingBottom: 24 },
+
   backButton: { marginBottom: 20 },
-  textContainer: { marginBottom: 40 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#000', fontFamily: 'SUIT-Bold' },
-  subtitle: { fontSize: 16, color: '#555', fontFamily: 'SUIT-Regular' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  input: { borderBottomWidth: 1, borderBottomColor: '#ccc', fontSize: 16, paddingVertical: 12, fontFamily: 'SUIT-Regular' },
-  checkButton: { backgroundColor: '#4E41FF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 6 },
-  checkButtonText: { color: '#fff', fontSize: 14, fontFamily: 'SUIT-Bold' },
-  error: { color: '#E5484D', fontSize: 13, marginTop: 8 },
-  success: { color: '#4E41FF', fontSize: 13, marginTop: 8 },
-  button: { backgroundColor: '#4E41FF', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 32 },
-  buttonDisabled: { opacity: 0.4 },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16, fontFamily: 'SUIT-Bold' },
+
+  // 타이틀/서브 — QuestionWrapper 타이포
+  title: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#111',
+    textAlign: 'left',
+    lineHeight: 26,
+    marginBottom: 6,
+  },
+  sub: { fontSize: 13, color: '#6A6A76', marginBottom: 20 },
+
+  // 입력 + 버튼
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    fontSize: 16,
+    paddingVertical: 12,
+    color: '#111',
+  },
+  checkButton: {
+    backgroundColor: PRIMARY,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  checkButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  error: { color: '#E5484D', fontSize: 13, marginTop: 6 },
+  success: { color: PRIMARY, fontSize: 13, marginTop: 6 },
+
+  // CTA (QuestionWrapper 동일)
+  footer: { paddingVertical: 12, backgroundColor: '#fff' },
+  cta: {
+    alignSelf: 'center',
+    width: '93%',
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+
+    // Android elevation
+    elevation: 3,
+  },
+  ctaDisabled: { opacity: 0.4 },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 16 },
 });

@@ -1,14 +1,21 @@
 // screens/SignUpVerifyCodeScreen.tsx
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSignUp } from '../screens/signup-context';
 
-// 상단에 헬퍼 추가
+// 상단에 헬퍼/상수는 그대로 유지
 const VERIFY_PATHS = [
   '/api/auth/verify-confirm',
   '/auth/verify-confirm',
@@ -16,9 +23,8 @@ const VERIFY_PATHS = [
   '/auth/verifyCode',
   '/api/auth/confirm',
   '/auth/confirm',
-  '/api/auth/verify',     // 혹시 간단 버전
+  '/api/auth/verify',
   '/auth/verify',
-  // 마지막에 기존 경로도 남겨둠 (로그 참고용)
   '/api/auth/verify-code',
 ];
 
@@ -47,17 +53,19 @@ async function postJsonWithFallback(base: string, paths: string[], payload: any)
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
 
+const PRIMARY = '#4E41FF';
+const INSET = 40;
+
 export default function SignUpVerifyCodeScreen() {
   const router = useRouter();
   const { data } = useSignUp();
-  const { transactionId } = data; // ✅ 이제 이 값만 필요
+  const { transactionId } = data;
 
   const [code, setCode] = useState('');
   const [timer, setTimer] = useState(180);
   const [expired, setExpired] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 필수값 없으면 이전 화면으로
   useEffect(() => {
     if (!transactionId) {
       Alert.alert('잘못된 접근', '인증 요청 정보가 없습니다.');
@@ -65,7 +73,6 @@ export default function SignUpVerifyCodeScreen() {
     }
   }, [transactionId]);
 
-  // 타이머
   useEffect(() => {
     if (timer <= 0) {
       setExpired(true);
@@ -81,7 +88,6 @@ export default function SignUpVerifyCodeScreen() {
     return `${m}:${s}`;
   }, [timer]);
 
-  // ✅ 인증번호 검증
   const handleVerify = async () => {
     const c = code.trim();
     if (!c || c.length < 4) {
@@ -98,7 +104,7 @@ export default function SignUpVerifyCodeScreen() {
 
       const payload = {
         transactionId: transactionId,
-        verificationCode: c, // DTO 필드명과 동일
+        verificationCode: c, // DTO 필드명 동일
       };
 
       console.log('[VERIFY REQ]', payload);
@@ -130,59 +136,134 @@ export default function SignUpVerifyCodeScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        <Text style={styles.title}>인증번호 입력</Text>
-        <Text style={styles.subtitle}>휴대폰으로 전송된 인증번호를 입력해주세요</Text>
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            <View style={styles.content}>
+              {/* (선택) 상단 뒤로가기 아이콘 — 필요 없으면 이 블록 삭제 */}
+              {/* <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                <Ionicons name="chevron-back" size={24} color="#333" />
+              </TouchableOpacity> */}
 
-        <View style={styles.inputRow}>
-          <TextInput
-            value={code}
-            onChangeText={setCode}
-            placeholder="인증번호"
-            keyboardType="number-pad"
-            maxLength={6}
-            style={styles.input}
-            editable={!expired && !loading}
-          />
-          <Text style={[styles.timer, expired && { color: '#E53935' }]}>
-            {expired ? '만료' : mmss}
-          </Text>
+              {/* ⬇️ 질문(타이틀) — QuestionWrapper와 동일 타이포 */}
+              <Text style={styles.title} allowFontScaling={false}>인증번호 입력</Text>
+              <Text style={styles.sub} allowFontScaling={false}>
+                휴대폰으로 전송된 인증번호를 입력해주세요
+              </Text>
+
+              {/* 입력 + 타이머 */}
+              <View style={styles.inputRow}>
+                <TextInput
+                  value={code}
+                  onChangeText={setCode}
+                  placeholder="인증번호"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  style={styles.input}
+                  editable={!expired && !loading}
+                  placeholderTextColor="#A3A3A3"
+                />
+                <Text style={[styles.timer, expired && styles.timerExpired]} allowFontScaling={false}>
+                  {expired ? '만료' : mmss}
+                </Text>
+              </View>
+
+            </View>
+          </ScrollView>
+
+          {/* ⬇️ CTA — QuestionWrapper의 cta 모양 그대로 */}
+          <View style={styles.footer}>
+            <TouchableOpacity
+              activeOpacity={0.95}
+              onPress={handleVerify}
+              disabled={expired || loading}
+              style={[styles.cta, (expired || loading) && styles.ctaDisabled]}
+            >
+              <Text style={styles.ctaText} allowFontScaling={false}>
+                {loading ? '확인 중…' : '확인'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <TouchableOpacity
-          style={[styles.button, (expired || loading) && { opacity: 0.6 }]}
-          onPress={handleVerify}
-          disabled={expired || loading}
-        >
-          <Text style={styles.buttonText}>{loading ? '확인 중...' : '확인'}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8 }}>
-          <Ionicons name="chevron-back" size={16} color="#888" />
-          <Text style={{ color: '#888' }}> 뒤로가기</Text>
-        </TouchableOpacity>
       </KeyboardAvoidingView>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 16 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  scrollContent: { flexGrow: 1, backgroundColor: '#fff' },
+
+  // QuestionWrapper 기준: 아래서 시작 + 좌우 INSET 40
+  content: { paddingTop: 72, paddingHorizontal: INSET, paddingBottom: 24 },
+
+  // 타이틀/서브 — QuestionWrapper 타이포
+  title: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: '#111',
+    textAlign: 'left',
+    lineHeight: 26,
+    marginBottom: 8,
+  },
+  sub: { fontSize: 15, color: '#6A6A76', marginBottom: 18 },
+
+  // 입력행
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 6 },
   input: {
-    flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 14, fontSize: 16,
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E6E6EF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#111',
+    backgroundColor: '#fff',
   },
-  timer: { width: 56, textAlign: 'right', fontWeight: '600' },
-  button: {
-    marginTop: 16, backgroundColor: '#4E41FF', paddingVertical: 14,
-    borderRadius: 10, alignItems: 'center',
+  timer: { width: 60, textAlign: 'right', fontWeight: '700', color: '#111' },
+  timerExpired: { color: '#E5484D' },
+
+  // (선택) 아이콘형 뒤로가기
+  backBtn: { marginBottom: 16 },
+
+  // (선택) 텍스트형 뒤로가기
+  backTextBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  backText: { color: '#888' },
+
+  // CTA (QuestionWrapper 동일)
+  footer: {
+    paddingVertical: 12,
+    backgroundColor: '#fff',
   },
-  buttonText: { color: '#fff', fontWeight: '700' },
+  cta: {
+    alignSelf: 'center',
+    width: '93%',
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+
+    // Android elevation
+    elevation: 3,
+  },
+  ctaDisabled: { opacity: 0.4 },
+  ctaText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 16 },
 });
