@@ -54,13 +54,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', // 가로 중앙
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: '700',
     marginBottom: 20, // 제목과 이미지 사이 여백
   },
   illust: {
-    width: 220,
-    height: 220,
+    width: 250,
+    height: 250,
   },
   startBtn: {
     width: '93%',
@@ -69,15 +69,18 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
+    marginBottom: 20, 
   },
   startText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
+  color: 'white',
+  fontSize: 16,
+  fontWeight: '700',
+  textAlign: 'center', // 가로 중앙
+  lineHeight: 16,  
   },
 });

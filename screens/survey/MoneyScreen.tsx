@@ -30,7 +30,6 @@ export default function Q46MoneyScreen() {
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    // 컨텍스트 갱신에 따라 외부에서 값이 바뀐 경우도 동기화
     if (typeof data.desiredSalaryYear === 'number') {
       setRaw(String(data.desiredSalaryYear));
       setDisplay(formatNumber(String(data.desiredSalaryYear)));
@@ -47,12 +46,11 @@ export default function Q46MoneyScreen() {
 
   const onNext = () => {
     if (!isValid) return;
-    // ✅ 컨텍스트에 저장 (정수 원화 금액)
     setField('desiredSalaryYear', Number(raw));
 
-    // ✅ 수정 모드면 확인 화면으로, 아니면 다음 문항
     if (isEdit) {
-      router.replace('/survey/confirm' as const);
+      // 수정 모드 → 확인 화면의 '연봉(salary)' 탭으로 복귀
+      router.replace('/survey/confirm?tab=salary' as const);
     } else {
       router.replace('/survey/q/47' as const);
     }
@@ -63,8 +61,9 @@ export default function Q46MoneyScreen() {
       title="Q46. 최소 희망연봉을 입력해주세요."
       progressText="46/47"
       progressPct={(46 / 47) * 100}
-      onNext={onNext}          // 하단 “확인”이 저장 트리거
-      disabled={!isValid}
+      onNext={onNext}       // ✅ 하단 “확인” 버튼 트리거
+      disabled={!isValid}   // ✅ 유효성 전까지 비활성화
+      // topPadding, gapAfterTitle은 QuestionWrapper 기본값(presurvey 기준) 사용
     >
       <Text style={styles.desc}>
         가장 낮아도 괜찮다고 생각하는 연봉금액을 알려주세요.
@@ -83,8 +82,7 @@ export default function Q46MoneyScreen() {
         onSubmitEditing={onNext}
         autoCorrect={false}
         autoCapitalize="none"
-        // 커서를 항상 끝으로 (간단 안정 버전)
-        selection={{ start: display.length, end: display.length }}
+        selection={{ start: display.length, end: display.length }} // 커서를 항상 끝으로
       />
 
       <View style={{ marginTop: 8 }}>

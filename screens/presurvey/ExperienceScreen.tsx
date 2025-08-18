@@ -1,18 +1,18 @@
 // screens/presurvey/ExperienceScreen.tsx
-import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
 import { ROUTES, useSurvey } from './survey-context';
 
 type Ans = '예 (경력 있어요)' | '아니오 (경력 없어요)';
-type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]; // ⬅ 선택(타입 안전)
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
 const PRIMARY = '#4E41FF';
 
 export default function ExperienceScreen() {
   const { data, setData } = useSurvey();
-  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>();
 
   const initialUi = useMemo<Ans | null>(() => {
     if (data.hasExperience === true) return '예 (경력 있어요)';
@@ -23,12 +23,11 @@ export default function ExperienceScreen() {
   const [value, setValue] = useState<Ans | null>(initialUi);
   const [error, setError] = useState<string | null>(null);
 
-  // ⬅ 공통 이동 함수
   const goNext = (next: RoutePath) => {
     if (from === 'confirm') {
-      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+      router.replace(ROUTES.confirm);
     } else {
-      router.push(next);              // 일반 흐름이면 다음 단계
+      router.push(next);
     }
   };
 
@@ -45,12 +44,17 @@ export default function ExperienceScreen() {
       ...(yes ? {} : { experiences: [] }), // 아니오면 상세 초기화
     });
 
-    // ✅ 수정 모드에서도 Confirm으로 돌아가야 하므로 goNext 사용
     goNext(yes ? ROUTES.experienceDetail : ROUTES.economySaving);
   };
 
   return (
-    <QuestionWrapper question="경력(인턴경험 포함)이 있으신가요?" onNext={onNext} error={error}>
+    <QuestionWrapper
+      question="경력(인턴경험 포함)이 있으신가요?"
+      onNext={onNext}
+      error={error}
+      topPadding={140}        // 상단 여백
+      gapAfterQuestion={24}  // ⬅️ 질문 아래 간격
+    >
       <View style={styles.list}>
         {([
           { label: '예 (경력 있어요)', emoji: '🔵' },
@@ -63,6 +67,9 @@ export default function ExperienceScreen() {
               onPress={() => setValue(label)}
               activeOpacity={0.9}
               style={[styles.card, active && styles.cardActive]}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
             >
               <Text style={[styles.emoji, active && styles.emojiActive]}>{emoji}</Text>
               <Text style={[styles.cardText, active && styles.cardTextActive]}>{label}</Text>
@@ -75,8 +82,15 @@ export default function ExperienceScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { width: '100%', gap: 14, marginTop: 8 },
+  // QuestionWrapper의 paddingLeft: 8 과 좌우 라인업 맞춤
+  list: {
+    width: '100%',
+    paddingHorizontal: 8,
+    marginTop: 8,
+    rowGap: 14,             // RN 0.73+; 미지원이면 아래 marginBottom 사용
+  },
   card: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -90,6 +104,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    marginBottom: 14,       // rowGap 미지원 대비
   },
   cardActive: { borderColor: PRIMARY, shadowOpacity: 0.12, backgroundColor: '#F5F3FF' },
   emoji: { fontSize: 18 },

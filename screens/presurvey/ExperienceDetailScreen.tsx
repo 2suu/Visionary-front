@@ -1,18 +1,18 @@
 // screens/presurvey/ExperienceDetailScreen.tsx
-import { router, useLocalSearchParams } from 'expo-router'; // ⬅ 추가
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
 import { ROUTES, useSurvey } from './survey-context';
 
 type Row = { field: string; years: string; months: string };
-type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]; // ⬅ 선택(타입 안전)
+type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
 const PRIMARY = '#4E41FF';
 
 export default function ExperienceDetailScreen() {
   const { data, upsertExperience, setData } = useSurvey();
-  const { from } = useLocalSearchParams<{ from?: 'confirm' }>(); // ⬅ 추가
+  const { from } = useLocalSearchParams<{ from?: 'confirm' }>();
 
   const initialRows = useMemo<Row[]>(() => {
     if (!data.experiences || data.experiences.length === 0) {
@@ -44,7 +44,10 @@ export default function ExperienceDetailScreen() {
   };
 
   const remove = (idx: number) => {
-    setRows(r => r.filter((_, i) => i !== idx));
+    setRows(r => {
+      const next = r.filter((_, i) => i !== idx);
+      return next.length === 0 ? [{ field: '', years: '', months: '' }] : next;
+    });
   };
 
   const valid = (r: Row) => {
@@ -55,12 +58,11 @@ export default function ExperienceDetailScreen() {
     return r.field.trim().length > 0 && (yOk || mOk);
   };
 
-  // ⬅ 공통 이동 함수
   const goNext = (next: RoutePath) => {
     if (from === 'confirm') {
-      router.replace(ROUTES.confirm); // 수정 모드면 Confirm 복귀
+      router.replace(ROUTES.confirm);
     } else {
-      router.push(next);              // 일반 흐름이면 다음 단계
+      router.push(next);
     }
   };
 
@@ -73,22 +75,16 @@ export default function ExperienceDetailScreen() {
     }
     setError(null);
 
-    // 저장 (최대 2개)
     picked.forEach((r, i) => {
       const years = Math.min(50, Math.max(0, Number(r.years || 0)));
       const months = Math.min(11, Math.max(0, Number(r.months || 0)));
       upsertExperience(i, { field: r.field.trim(), years, months });
     });
-
-    // 1개만 남긴 경우 두 번째 슬롯 비우기
     if (picked.length === 1) {
       upsertExperience(1, { field: '', years: 0, months: 0 });
     }
 
-    // 방어적으로 hasExperience true
     setData({ hasExperience: true });
-
-    // ✅ 수정 모드면 Confirm으로, 아니면 다음 단계로
     goNext(ROUTES.economySaving);
   };
 
@@ -97,23 +93,30 @@ export default function ExperienceDetailScreen() {
       question="경력이 있으시다면, 어떤 분야에서 몇 년 차이신가요?"
       onNext={onNext}
       error={error}
+      topPadding={140}        // 상단 여백
+      gapAfterQuestion={10}  // ⬅️ 질문 아래 간격
     >
-      {/* 이하 동일 */}
-
+      {/* 가이드 박스 */}
       <View style={styles.helperBox}>
         <Text style={styles.helperText}>인턴 또는 정규직으로 근무한 분야만 입력 가능합니다.</Text>
         <Text style={styles.helperText}>경력은 최대 2개까지 작성할 수 있습니다.</Text>
-        <Text style={styles.example}>작성예시)  경력분야 데이터분석 인턴  /  근무기간 0년차 6개월</Text>
+        <Text style={styles.example}>작성예시)</Text>
+        <Text style={styles.example}>경력분야: 데이터분석 인턴</Text>
+        <Text style={styles.example}>근무기간: 0년차 6개월</Text>
       </View>
 
-      <View style={{ width: '100%', gap: 12 }}>
+      {/* 입력 카드들 */}
+      <View style={styles.cardsWrap}>
         {rows.map((row, idx) => (
           <View key={idx} style={styles.card}>
             {/* 경력분야 */}
             <View style={styles.rowHeader}>
               <Text style={styles.label}>경력분야</Text>
               {rows.length > 1 && (
-                <TouchableOpacity onPress={() => remove(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity
+                  onPress={() => remove(idx)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Text style={{ color: '#9A9AAF' }}>삭제</Text>
                 </TouchableOpacity>
               )}
@@ -126,6 +129,8 @@ export default function ExperienceDetailScreen() {
               placeholderTextColor="#D4D4D4"
               style={styles.fieldInput}
               returnKeyType="next"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
 
             {/* 근무기간 */}
@@ -168,9 +173,20 @@ export default function ExperienceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  helperBox: { width: '100%', marginBottom: 8 },
-  helperText: { fontSize: 12, color: '#666', marginBottom: 2 },
-  example: { fontSize: 12, color: '#888', marginTop: 4 },
+  // 좌우 라인업(QuestionWrapper의 paddingLeft:8과 맞춤)
+  helperBox: {
+    width: '100%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  helperText: { fontSize: 15, color: '#666', marginBottom: 5 },
+  example: { fontSize: 13, color: '#888', marginTop: 4 },
+
+  cardsWrap: {
+    width: '100%',
+    paddingHorizontal: 8,
+    rowGap: 12,                   // RN 0.73+; 미지원 시 아래 card.marginBottom 사용
+  },
 
   card: {
     borderRadius: 14,
@@ -182,10 +198,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
+    marginBottom: 12,            // rowGap 미지원 대비
   },
 
   rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  label: { fontSize: 13, color: '#444' },
+  label: { fontSize: 15, color: '#444' },
 
   fieldInput: {
     borderWidth: 1,
@@ -195,6 +212,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     backgroundColor: '#FFF',
+    marginBottom: 10,
   },
 
   periodRow: { flexDirection: 'row', alignItems: 'center' },
@@ -207,7 +225,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  suffix: { fontSize: 14, color: '#555' },
+  suffix: { fontSize: 15, color: '#555' },
 
   addBtn: {
     alignSelf: 'center',
