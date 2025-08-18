@@ -11,7 +11,7 @@ import { useSurvey as usePreSurvey } from '../presurvey/survey-context';
 
 const PRIMARY = '#4E41FF';
 
-// ---- 확인 화면에서만 쓰는 축약 라벨 맵(서버 전송에는 사용 안 함) ----
+// ---- (UI용) 축약 라벨 맵: 서버 전송에는 사용 안 함 ----
 const SAVING_SHORT: Record<string, string> = {
   '🚫 저축할 여유가 없다': '🚫 여유없음',
   '💰 조금씩이라도 저축 중이다': '💰 조금씩 저축',
@@ -37,6 +37,109 @@ const STRESS_SHORT: Record<string, string> = {
   '😶 뚜렷한 해소 방법이 없어서 그냥 버티는 편이에요': '😶 버티기',
 };
 
+// ---- (서버 전송용) 코드 매핑 ----
+const strip = (s: string) => s?.replace(/[^\p{L}\p{N}\s]/gu, '').trim(); // 이모지 제거
+const toNumber = (v: any) => Number(String(v ?? '').replace(/[^\d]/g, '')) || 0;
+
+// 성별: 1 남자 / 2 여자 / 3 밝힘거부
+const mapGenderToCode = (g?: string | null) => {
+  if (!g) return 3;
+  const s = strip(g);
+  if (s?.includes('남')) return 1;
+  if (s?.includes('여')) return 2;
+  return 3;
+};
+
+// 최종학력: 1 중졸이하 / 2 고졸 / 3 2~3년제 / 4 4년제 / 5 대학원 이상
+const mapEduToCode = (e?: string | null) => {
+  const s = strip(e ?? '');
+  if (!s) return undefined;
+  if (s.includes('중') && s.includes('졸')) return 1;
+  if (s.includes('고') && s.includes('졸')) return 2;
+  if (s.includes('23') || s.includes('2') && s.includes('3') || s.includes('전제')) return 3; // 느슨 매칭
+  if (s.includes('4') && s.includes('년제')) return 4;
+  if (s.includes('대학원') || s.includes('이상')) return 5;
+  return undefined;
+};
+
+// 저축: 1~4
+const mapSavingToCode = (v?: string | null) => {
+  switch (v) {
+    case '🚫 저축할 여유가 없다': return 1;
+    case '💰 조금씩이라도 저축 중이다': return 2;
+    case '📅 매달 일정 금액 이상 저축 중이다': return 3;
+    case '📈 저축 외에도 투자까지 여유가 있다': return 4;
+    default: return undefined;
+  }
+};
+
+// 생활비: 1~4
+const mapSpendingToCode = (v?: string | null) => {
+  switch (v) {
+    case '🚫 생활비도 빠듯해 기본적인 지출이 어렵다': return 1;
+    case '🧾 기본 생활비는 가능한 수준이다': return 2;
+    case '👜 여유 있게 쓰고 약간의 소비도 가능하다': return 3;
+    case '🎯 원하는 취미나 자기계발에도 충분히 투자할 수 있다': return 4;
+    default: return undefined;
+  }
+};
+
+// 대인관계 빈도: 없음=1, 보통=3, 활발=5
+const mapRelationFreq = (v?: string | null) => {
+  if (!v) return undefined;
+  if (v.includes('없')) return 1;
+  if (v.includes('활발')) return 5;
+  return 3; // 보통
+};
+
+// 관계 스타일: 깊고 좁게=2, 넓고 얕게=4
+const mapRelationStyle = (v?: string | null) => {
+  if (!v) return undefined;
+  if (v.includes('깊') || v.includes('좁')) return 2;
+  if (v.includes('넓') || v.includes('얕')) return 4;
+  return undefined;
+};
+
+// 감정기복: 1~4
+const mapMoodToCode = (v?: string | null) => {
+  switch (v) {
+    case '😊 감정이 안정적이고 쉽게 흔들리지 않아요': return 1;
+    case '🙂 약간의 기복은 있지만 스스로 잘 조절해요': return 2;
+    case '😕 기분 변화가 가끔 심한 편이에요': return 3;
+    case '😣 감정 기복이 크고, 컨트롤이 잘 안 될 때도 있어요': return 4;
+    default: return undefined;
+  }
+};
+
+// 스트레스해소: 1~4
+const mapStressToCode = (v?: string | null) => {
+  switch (v) {
+    case '✨ 운동이나 산책 같은 신체 활동을 해요': return 1;
+    case '💡 음악을 듣거나 영화를 보며 혼자만의 시간을 보내요': return 2;
+    case '🗣️ 가족이나 친구와 대화하면서 스트레스를 풀어요': return 3;
+    case '😶 뚜렷한 해소 방법이 없어서 그냥 버티는 편이에요': return 4;
+    default: return undefined;
+  }
+};
+
+// 우선순위 라벨 → 순위 숫자 (1=가장 중요)
+const priorityMapFromOrder = (order: string[] | undefined) => {
+  // 저장 형식은 이모지 제거/공백 제거된 키 사용을 가정: '나이','성별','경제상황및대인관계','성격','흥미','관심분야'
+  const result: Record<'나이'|'성별'|'경제상황및대인관계'|'성격'|'흥미'|'관심분야', number | undefined> = {
+    나이: undefined,
+    성별: undefined,
+    경제상황및대인관계: undefined,
+    성격: undefined,
+    흥미: undefined,
+    관심분야: undefined,
+  };
+  (order ?? []).forEach((k, i) => {
+    const key = strip(k)?.replace(/\s+/g, '') as keyof typeof result;
+    if (key && key in result) result[key] = i + 1;
+  });
+  return result;
+};
+
 export default function ConfirmScreen() {
   const insets = useSafeAreaInsets();
 
@@ -45,63 +148,88 @@ export default function ConfirmScreen() {
   // survey 데이터(1~44 Likert, 45 관심분야 문자열, 46 최소연봉 숫자, 47 우선순위)
   const { data: survey } = useSurveyMain();
 
-  // ---- payload(백엔드 전송용: 원본 문장/숫자/배열) ----
+  // ---- payload(백엔드 전송용: 요구 스키마로 직렬화) ----
   const payload = useMemo(() => {
-    // likert 배열을 객체로 변환
-    const likert = survey.likert ?? [];
-    const 성격_1_20: Record<number, 1|2|3|4|5> = {};
-    const 흥미_21_44: Record<number, 1|2|3|4|5> = {};
-    for (let i=1;i<=20;i++) 성격_1_20[i] = (likert[i-1] ?? 3) as 1|2|3|4|5;
-    for (let i=21;i<=44;i++) 흥미_21_44[i] = (likert[i-1] ?? 3) as 1|2|3|4|5;
+    // 1) 우선순위 맵
+    const pmap = priorityMapFromOrder(survey.priorityOrder);
 
-    // 관심분야: 콤마 분리 배열(최대 3개)
-    const 관심분야 = String(survey.interestField ?? '')
+    // 2) 관심분야 배열(최대 3개)
+    const 관심분야Arr = String(survey.interestField ?? '')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)
-      .slice(0,3);
+      .slice(0, 3);
 
-    // 최소급여: 숫자 보장
+    // 3) 최소급여 숫자
     const 최소급여 =
       typeof survey.desiredSalaryYear === 'number'
         ? Math.max(0, survey.desiredSalaryYear)
-        : Math.max(0, Number(String(survey.desiredSalaryYear ?? '0').replace(/[^\d]/g, '')));
+        : Math.max(0, toNumber(survey.desiredSalaryYear));
 
+    // 4) Likert(1~44) → 성격(1~20) / 흥미(21~44) 그룹화
+    const likert = survey.likert ?? [];
+    const get = (idx1: number) => (likert[idx1 - 1] ?? 3) as 1 | 2 | 3 | 4 | 5;
+
+    const 성격 = {
+      priority: pmap['성격'],
+      외향성: [get(1), get(2), get(3), get(4)],
+      친화성: [get(5), get(6), get(7), get(8)],
+      성실성: [get(9), get(10), get(11), get(12)],
+      신경성: [get(13), get(14), get(15), get(16)],
+      개방성: [get(17), get(18), get(19), get(20)],
+    };
+
+    const 흥미 = {
+      priority: pmap['흥미'],
+      실재형: [get(21), get(22), get(23), get(24)],
+      탐구형: [get(25), get(26), get(27), get(28)],
+      예술형: [get(29), get(30), get(31), get(32)],
+      사회형: [get(33), get(34), get(35), get(36)],
+      기업형: [get(37), get(38), get(39), get(40)],
+      관습형: [get(41), get(42), get(43), get(44)],
+    };
+
+    // 5) 경력: 첫 항목을 대표로 전송(복수 입력 시 정책 확정되면 변경)
+    let 경력Payload:
+      | { value: true; 분야: string; 기간: string }
+      | { value: false } = { value: false };
+    if (pre.hasExperience && pre.experiences?.length) {
+      const e = pre.experiences[0];
+      const y = toNumber(e?.years);
+      const m = toNumber(e?.months);
+      const totalMonths = y * 12 + m;
+      경력Payload = {
+        value: true,
+        분야: e?.field ?? '',
+        기간: String(totalMonths), // 개월 단위
+      };
+    }
+
+    // 6) 전송 페이로드(요구 스키마)
     return {
-      인구통계: {
-        나이: pre.age ?? null,
-        성별: pre.gender ?? null,
-        최종학력: pre.education ?? null,
-      },
-      경력: {
-        경력있음: !!pre.hasExperience,
-        목록: (pre.hasExperience ? pre.experiences : []).slice(0,2).map(e => ({
-          분야: e.field ?? '',
-          년수: e.years ?? 0,
-          개월: e.months ?? 0,
-        })),
-      },
-      재정: {
-        저축상태: pre.savingFull ?? null,     // ← 원본 문장 그대로
-        생활비만족: pre.spendingFull ?? null, // ← 원본 문장 그대로
-      },
-      대인관계: {
-        교류빈도: pre.relationFreq ?? null,
-        관계스타일: pre.relationStyle ?? null,
-      },
-      감정: { 기복: pre.moodFull ?? null },      // ← 원본 문장
-      스트레스: { 해소방법: pre.stressFull ?? null }, // ← 원본 문장
+      나이: { priority: pmap['나이'], value: toNumber(pre.age) || undefined },
+      성별: { priority: pmap['성별'], value: mapGenderToCode(pre.gender) },
+      최종학력: { value: mapEduToCode(pre.education) },
 
-      심리척도: {
-        '성격_1~20': 성격_1_20,
-        '흥미_21~44': 흥미_21_44,
+      경력: 경력Payload,
+
+      '경제상황 및 대인관계': {
+        priority: pmap['경제상황및대인관계'],
+        저축: mapSavingToCode(pre.savingFull),
+        생활비: mapSpendingToCode(pre.spendingFull),
+        대인관계: mapRelationFreq(pre.relationFreq),
+        '관계 스타일': mapRelationStyle(pre.relationStyle),
       },
 
-      선호: {
-        관심분야,
-        최소급여,
-        우선순위: survey.priorityOrder ?? [],
-      },
+      감정기복: { value: mapMoodToCode(pre.moodFull) },
+      스트레스해소: { value: mapStressToCode(pre.stressFull) },
+
+      성격,
+      흥미,
+
+      관심분야: { priority: pmap['관심분야'], value: 관심분야Arr },
+
+      최소급여: 최소급여,
     };
   }, [pre, survey]);
 
@@ -116,12 +244,12 @@ export default function ConfirmScreen() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const txt = await res.text().catch(()=>'');
+        const txt = await res.text().catch(() => '');
         throw new Error(`${res.status} ${txt}`);
       }
       Alert.alert('제출 완료', '감사합니다!');
       router.replace('/(tabs)/home');
-    } catch (e:any) {
+    } catch (e: any) {
       Alert.alert('제출 실패', e?.message ?? '네트워크 오류');
     } finally {
       setSubmitting(false);
@@ -135,7 +263,10 @@ export default function ConfirmScreen() {
   const uiStress = STRESS_SHORT[pre.stressFull ?? ''] ?? (pre.stressFull ?? '-');
 
   const uiInterests = (survey.interestField ?? '')
-    .split(',').map(s=>s.trim()).filter(Boolean).slice(0,3);
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .slice(0, 3);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -152,12 +283,13 @@ export default function ConfirmScreen() {
           value={
             (pre.hasExperience && pre.experiences?.length)
               ? pre.experiences
-                  .slice(0,2)
+                  .slice(0, 2)
                   .map(e => {
-                    const y = e.years ?? 0, m = e.months ?? 0;
-                    if (y>0 && m>0) return `${e.field} · ${y}년차 ${m}개월`;
-                    if (y>0 && m===0) return `${e.field} · ${y}년차`;
-                    if (y===0 && m>0) return `${e.field} · ${m}개월`;
+                    const y = toNumber(e.years);
+                    const m = toNumber(e.months);
+                    if (y > 0 && m > 0) return `${e.field} · ${y}년차 ${m}개월`;
+                    if (y > 0 && m === 0) return `${e.field} · ${y}년차`;
+                    if (y === 0 && m > 0) return `${e.field} · ${m}개월`;
                     return `${e.field}`;
                   })
                   .join('\n')
