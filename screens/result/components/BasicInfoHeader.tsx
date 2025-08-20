@@ -31,7 +31,7 @@ function InfoBox({ icon, label, value }: { icon: string; label: string; value: s
 
 
 const styles = StyleSheet.create({
-  card: { backgroundColor:'#fff', borderRadius:14, padding:16,
+  card: { backgroundColor:'#fff', borderRadius:14, padding:16, marginTop: 30,  
           shadowColor:'#000', shadowOpacity:0.06, shadowRadius:8, elevation:2 },
   title:{ fontSize:18, fontWeight:'800', marginBottom:12 },
   grid2:{ flexDirection:'row', flexWrap:'wrap', columnGap:12, rowGap:12 },

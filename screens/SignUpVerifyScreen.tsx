@@ -64,12 +64,13 @@ export default function SignUpVerifyScreen() {
     setField('phone', tel);
     setField('carrier', carrier as any);
 
-    const payload = {
-      이름: name.trim(),
-      주민등록번호: rrn,
-      통신사: carrier as 'SKT' | 'KT' | 'LGU+' | '알뜰폰',
-      전화번호: tel,
-    } as const;
+   // ✅ 타입에 맞는 payload
+  const payload = {
+    name: name.trim(),
+    identificationNumber: rrn, // 공백 있는 키는 따옴표 필수
+    carrier: carrier as 'SKT' | 'KT' | 'LGU+' | '알뜰폰',
+    phoneNumber: tel,
+};
 
     try {
       setLoading(true);

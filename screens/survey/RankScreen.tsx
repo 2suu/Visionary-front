@@ -8,7 +8,7 @@ import QuestionWrapper from '../../screens/survey/QuestionWrapper';
 import { useSurvey } from '../../screens/survey/survey-context';
 
 const PRIMARY = '#4E41FF';
-const ITEMS = ['경제상황 💵','가치관 🌱','관심분야 🌟','성격 🙂','성별 🚻','나이 🎂','경력 💼'] as const;
+const ITEMS = ['💵 경제상황 & 대인관계','🌟 관심분야','🙂 성격','🚻 성별','🎂 나이','💼 경력'] as const;
 type Item = typeof ITEMS[number];
 const MAX = ITEMS.length;
 
