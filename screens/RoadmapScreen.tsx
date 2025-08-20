@@ -95,28 +95,6 @@ const INITIAL_SECTIONS: RoadmapSection[] = [
 /*************************
  * UI Atoms
  *************************/
-const SectionHeaderComponent = ({ title }: { title: string }) => (
-  <Text style={styles.sectionTitle}>{title}</Text>
-);
-
-SectionHeaderComponent.displayName = 'SectionHeader';
-const SectionHeader = memo(SectionHeaderComponent);
-
-const ProgressBarComponent = ({ value }: { value: number }) => (
-  <View>
-    <View style={styles.progressHeader}>
-      <Text style={styles.progressCaption}>진행률</Text>
-      <Text style={styles.progressLabel}>{Math.round(value)}%</Text>
-    </View>
-    <View style={styles.progressWrap}>
-      <View style={[styles.progressBar, { width: `${Math.max(0, Math.min(100, value))}%` }]} />
-    </View>
-  </View>
-);
-
-ProgressBarComponent.displayName = 'ProgressBar';
-const ProgressBar = memo(ProgressBarComponent);
-
 const BulletItemComponent = ({ 
   label, 
   done, 
@@ -403,28 +381,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLOR.bg },
   topHeader: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 8,
-  },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACE.lg,
-    paddingVertical: SPACE.xs,
-  },
-  timeText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLOR.text,
-  },
-  statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statusText: {
-    fontSize: 14,
-    color: COLOR.text,
   },
   navigationHeader: {
     flexDirection: 'row',
@@ -517,7 +473,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: 'transparent',
-    transition: 'all 0.2s ease',
   },
   cardPressed: {
     backgroundColor: '#F8F9FF',
