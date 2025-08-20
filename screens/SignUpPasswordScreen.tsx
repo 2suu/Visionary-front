@@ -35,11 +35,9 @@ export default function SignUpPasswordScreen() {
   // ✅ 디버그/에러 상태
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [lastReq, setLastReq] = useState<any>(null);
-  const [lastRes, setLastRes] = useState<{ status: number; body: string } | null>(null);
 
-  // 👇 개발 중 디버그 박스 표시 토글
-  const SHOW_DEBUG = true;
+  // 👇 개발 중 디버그 박스 표시 토글 (원래 테마 유지)
+  const SHOW_DEBUG = false;
 
   // ✅ 가드: 닉네임/아이디 없으면 이전 단계로
   useEffect(() => {
@@ -71,8 +69,7 @@ export default function SignUpPasswordScreen() {
     return b.length > 0 && a === b;
   }, [password, confirm]);
 
-  const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? 'http://localhost:8080';
-
+  // ✅ 여기서는 API 호출을 하지 않음 (저장만 하고 약관동의로 이동)
   const handleNext = async () => {
     if (loading) return;
     setErrorMsg(null);
@@ -89,83 +86,16 @@ export default function SignUpPasswordScreen() {
     try {
       setLoading(true);
 
-      // 1) Context에 저장
+      // 1) Context에 비밀번호 저장 (공백 제거)
       const passwordClean = clean(password);
-      setField('password', passwordClean);
+      await setField('password', passwordClean);
 
-      // 2) Payload
-      const payload = {
-        id: data.userId,
-        password: passwordClean,
-        nickName: data.nickname,         // 서버 필드명
-        transactionId: data.transactionId,
-      };
-      const safePayload = { ...payload, password: '********' };
-      setLastReq(safePayload);
-      console.log('[SIGNUP PAYLOAD]', payload);
-
-      // 3) 요청
-      const res = await fetch(`${API_BASE}/api/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-      setLastRes({ status: res.status, body: text });
-
-      if (!res.ok) {
-        // 서버 메시지 파싱
-        let msg = `서버 오류(${res.status})`;
-        try {
-          const j = JSON.parse(text);
-          msg = j.message || j.error || msg;
-          if (j.errors) {
-            msg = j.errors.map((e: any) =>
-              e.defaultMessage || e.message || `${e.field}: ${e.code}`
-            ).join('\n');
-          }
-        } catch {
-          if (text) msg = text;
-        }
-
-        // 🎯 중복 에러면 해당 화면으로 보내기
-        const isIdDup = msg.includes('아이디') && (msg.includes('이미 사용') || msg.includes('중복'));
-        const isNickDup = msg.includes('닉네임') && (msg.includes('이미 사용') || msg.includes('중복'));
-        if (isIdDup) {
-          Alert.alert('아이디 중복', msg, [
-            { text: '확인', onPress: () =>
-                router.replace({ pathname: '/signup-id', params: { error: msg } })
-              },
-          ]);
-          return;
-        }
-        if (isNickDup) {
-          Alert.alert('닉네임 중복', msg, [
-            { text: '확인', onPress: () =>
-                router.replace({ pathname: '/signup-nickname', params: { error: msg } })
-              },
-          ]);
-          return;
-        }
-
-        setErrorMsg(msg);
-        Alert.alert('회원가입 실패', msg);
-        return;
-      }
-
-      // ✅ 성공 처리
-      if (Platform.OS === 'web') {
-        router.replace('/signup-complete');
-      } else {
-        Alert.alert('회원가입 성공', '완료 화면으로 이동합니다.', [
-          { text: '확인', onPress: () => router.replace('/signup-complete') },
-        ]);
-      }
+      // 2) 약관동의 화면으로 이동만
+      router.replace('/signup-agree');
     } catch (err: any) {
       const msg = err?.message ?? '알 수 없는 오류';
       setErrorMsg(msg);
-      Alert.alert('회원가입 실패', msg);
+      Alert.alert('오류', msg);
     } finally {
       setLoading(false);
     }
@@ -185,9 +115,7 @@ export default function SignUpPasswordScreen() {
             bounces={false}
           >
             <View style={styles.content}>
-            
-
-              {/* ⬇️ 질문(타이틀/서브) — QuestionWrapper 스타일 */}
+              {/* ⬇️ 질문(타이틀/서브) — 기존 QuestionWrapper 스타일 유지 */}
               <View style={styles.textContainer}>
                 <Text style={styles.title} allowFontScaling={false}>비밀번호</Text>
                 <Text style={styles.subtitle} allowFontScaling={false}>마지막 단계예요! 비밀번호를 설정해주세요</Text>
@@ -207,7 +135,7 @@ export default function SignUpPasswordScreen() {
                   returnKeyType="next"
                   textContentType="newPassword"
                 />
-                <TouchableOpacity onPress={() => setShowPassword(p => !p)} style={styles.eyeButton}>
+                <TouchableOpacity onPress={() => setShowPassword((p) => !p)} style={styles.eyeButton}>
                   <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#666" />
                 </TouchableOpacity>
               </View>
@@ -226,7 +154,7 @@ export default function SignUpPasswordScreen() {
                   returnKeyType="done"
                   textContentType="password"
                 />
-                <TouchableOpacity onPress={() => setShowConfirm(p => !p)} style={styles.eyeButton}>
+                <TouchableOpacity onPress={() => setShowConfirm((p) => !p)} style={styles.eyeButton}>
                   <Ionicons name={showConfirm ? 'eye-off' : 'eye'} size={22} color="#666" />
                 </TouchableOpacity>
               </View>
@@ -252,6 +180,14 @@ export default function SignUpPasswordScreen() {
                 </View>
               )}
 
+              {/* 디버그 (옵션) */}
+              {SHOW_DEBUG && (
+                <View style={styles.debugBox}>
+                  <Text style={styles.debugTitle}>DEBUG</Text>
+                  <Text style={styles.debugLabel}>nickname / userId</Text>
+                  <Text style={styles.debugMono}>{JSON.stringify({ nickname, userId })}</Text>
+                </View>
+              )}
             </View>
           </ScrollView>
 
@@ -299,9 +235,7 @@ const styles = StyleSheet.create({
   // ⬇️ QuestionWrapper 기준: 아래에서 시작 + 좌우 INSET 40
   content: { paddingTop: 72, paddingHorizontal: INSET, paddingBottom: 24, backgroundColor: '#fff' },
 
-  backButton: { marginBottom: 20 },
-
-  // 타이틀/서브 — QuestionWrapper 타이포
+  // 타이틀/서브 — QuestionWrapper 타이포 유지
   textContainer: { marginBottom: 18 },
   title: {
     fontSize: 21,
@@ -313,7 +247,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, color: '#6A6A76', marginTop: 6 },
 
   // 입력
-  inputWrapper: { position: 'relative', marginBottom: 16 }, // 간격 약간 넓힘
+  inputWrapper: { position: 'relative', marginBottom: 16 },
   input: {
     borderBottomWidth: 1,
     borderBottomColor: '#E6E6EF',

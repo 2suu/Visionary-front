@@ -1,39 +1,65 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from './auth-context';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, loading } = useAuth();
-  const insets = useSafeAreaInsets(); // ⬅️ 추가
+  const insets = useSafeAreaInsets();
 
-  const [userId, setUserId] = useState('');
+  // ✅ 키 이름을 서버/컨텍스트와 일치: id
+  const [id, setId] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
 
+  const canSubmit = useMemo(
+    () => id.trim().length > 0 && password.trim().length > 0 && !loading,
+    [id, password, loading]
+  );
+
   const handleLogin = async () => {
+    if (!canSubmit) {
+      console.log('[LOGIN][UI] blocked submit (invalid state)');
+      return;
+    }
+    console.log('[LOGIN][UI] try signIn =>', { id: id.trim(), remember });
+
     try {
-      await signIn({ userId, password, remember });
-      router.replace('/(tabs)/home');
-    } catch {}
+      await signIn({ id:id.trim() , password: password.trim(), remember }); // 실패 시 throw됨
+      console.log('[LOGIN][UI] signIn success → navigate home');
+      router.replace('/(tabs)/home'); // ✅ 성공시에만 이동
+    } catch (e: any) {
+      console.warn('[LOGIN][UI] signIn failed =>', e?.message);
+      Alert.alert('로그인 실패', e?.message ?? '잠시 후 다시 시도해 주세요.');
+    }
   };
 
   return (
-    // ⬇️ KAV를 최상단으로 올림
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={insets.top} // ⬅️ 노치/상단바 높이만큼 오프셋
+      keyboardVerticalOffset={insets.top}
     >
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 16 }]} // ⬅️ 하단 여유
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 16 }]}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag" // ⬅️ 드래그로 키보드 내림
+        keyboardDismissMode="on-drag"
         bounces={false}
       >
-        {/* ✅ 기존 내용 그대로 (내부 KeyboardAvoidingView 는 제거) */}
         <View style={styles.container}>
           <Text style={styles.logo}>VISIONARY</Text>
 
@@ -42,12 +68,14 @@ export default function LoginScreen() {
               <TextInput
                 placeholder="아이디"
                 style={styles.input}
-                value={userId}
-                onChangeText={setUserId}
+                value={id}
+                onChangeText={setId}
                 placeholderTextColor="#aaa"
                 returnKeyType="next"
                 autoCapitalize="none"
+                autoCorrect={false}
                 editable={!loading}
+                textContentType="username"
               />
               <TextInput
                 placeholder="비밀번호"
@@ -58,6 +86,7 @@ export default function LoginScreen() {
                 placeholderTextColor="#aaa"
                 returnKeyType="done"
                 editable={!loading}
+                textContentType="password"
                 onSubmitEditing={handleLogin}
               />
 
@@ -105,9 +134,9 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.loginButton, loading && { opacity: 0.6 }]}
+              style={[styles.loginButton, (!canSubmit || loading) && { opacity: 0.6 }]}
               onPress={handleLogin}
-              disabled={loading}
+              disabled={!canSubmit}
               activeOpacity={0.9}
             >
               <Text style={styles.loginButtonText}>{loading ? '로그인 중…' : '로그인'}</Text>
@@ -122,7 +151,6 @@ export default function LoginScreen() {
 const LINE = '#E5E7EB';
 
 const styles = StyleSheet.create({
-  // ScrollView 내부 컨텐츠 스타일
   scrollContent: {
     flexGrow: 1,
     minHeight: '100%',
@@ -130,15 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 20,
   },
-
-  kav: { flex: 1 },
-
-  container: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
-  // ⬇ 제목 (VISIONARY)
+  container: { flex: 1, alignItems: 'center' },
   logo: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -146,23 +166,16 @@ const styles = StyleSheet.create({
     marginTop: 200,
     marginBottom: 0,
   },
-
-  // ⬇ 중앙 묶음을 '화면' 기준으로 수직/가로 중앙 고정
   centerWrap: {
-    flex: 1,               // 화면 남는 공간을 채워 수직 중앙 계산
+    flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  // ⬇ 아이디/비밀번호 입력칸 덩어리
   centerArea: {
     width: '100%',
     maxWidth: 440,
-    // ⚠️ 여기서는 flex:1, justifyContent:'center' 제거 → centerWrap이 중앙 정렬 담당
   },
-
-  // 입력 필드 공통 스타일
   input: {
     width: '100%',
     borderBottomWidth: 1.2,
@@ -171,8 +184,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 10,
   },
-
-  // or 텍스트
   or: {
     marginTop: 12,
     marginBottom: 12,
@@ -180,8 +191,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
   },
-
-  // SNS 아이콘 행
   socialRow: {
     flexDirection: 'row',
     gap: 16,
@@ -194,13 +203,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  icon: {
-    width: 44,
-    height: 44,
-    resizeMode: 'contain',
-  },
-
-  // 아이디/비번 찾기/회원가입 줄
+  icon: { width: 44, height: 44, resizeMode: 'contain' },
   linkRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -209,28 +212,22 @@ const styles = StyleSheet.create({
   },
   linkText: { fontSize: 12, color: '#888', marginHorizontal: 4 },
   separator: { fontSize: 12, color: '#888' },
-
-  // 하단 영역
   bottomArea: {
     width: '100%',
     maxWidth: 440,
     transform: [{ translateY: -25 }],
     paddingBottom: 8,
   },
-
-  // ⬇ 가로 중앙 정렬 (세로 위치는 bottomArea가 유지)
   rememberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // 가로 중앙
-    alignSelf: 'center',      // 행 자체도 중앙
+    justifyContent: 'center',
+    alignSelf: 'center',
     marginBottom: 14,
     width: '100%',
     maxWidth: 440,
   },
   rememberText: { marginLeft: 8, fontSize: 14, color: '#444' },
-
-  // 로그인 버튼
   loginButton: {
     width: '100%',
     height: 56,
@@ -239,10 +236,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loginButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.2,
-  },
+  loginButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.2 },
 });
