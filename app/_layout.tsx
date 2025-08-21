@@ -9,6 +9,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../screens/auth-context';
 import { SignUpProvider } from '../screens/signup-context';
 
+// ⬇️ presurvey / survey 컨텍스트를 최상단으로 이동
+import { SurveyProvider as PreSurveyProvider } from '../screens/presurvey/survey-context';
+import { SurveyProvider as MainSurveyProvider } from '../screens/survey/survey-context';
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -19,18 +23,18 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* 로그인/세션 전역 상태 */}
       <AuthProvider>
-        {/* 회원가입 진행 전역 상태 */}
         <SignUpProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            {/* 탭 루트 */}
-            <Stack.Screen name="(tabs)" />
-            {/* 로그인/회원가입/프리서베이 등 라우트는 파일명대로 자동 인식 */}
-            {/* 예: app/login.tsx, app/signup-verify.tsx, app/survey/... */}
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
+          <PreSurveyProvider>
+            <MainSurveyProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* 탭 루트 및 모든 라우트는 파일 기반으로 자동 인식 */}
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </MainSurveyProvider>
+          </PreSurveyProvider>
         </SignUpProvider>
       </AuthProvider>
     </ThemeProvider>

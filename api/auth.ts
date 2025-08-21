@@ -1,14 +1,13 @@
 import api from './client';
 
-// 요청 바디가 한글 키일 때의 타입(선택)
-export type VerificationReqKorean = {
-  이름: string;
-  주민등록번호: string; // "YYMMDD-X"
-  통신사: 'SKT' | 'KT' | 'LGU+' | '알뜰폰';
-  전화번호: string;     // "010-0000-0000"
+export type VerificationReq = {
+  name: string;
+  identificationNumber: string; // 공백 포함 → 반드시 따옴표!
+  carrier: 'SKT' | 'KT' | 'LGU+' | '알뜰폰';
+  phoneNumber: string;
 };
 
-// 인증코드 검증
+// 인증코드 검증 (이건 그대로)
 export function verifyAuthCode(payload: {
   고유Id: string;
   인증번호: string; // 숫자 6자리
@@ -16,7 +15,8 @@ export function verifyAuthCode(payload: {
   return api.post('/api/auth/verify', payload);
 }
 
-export async function requestVerificationKorean(payload: VerificationReqKorean) {
-  // 엔드포인트는 백엔드에 맞춰 수정(예: '/api/auth/verify')
+// 본인인증 요청
+export async function requestVerificationKorean(payload: VerificationReq) {
+  // 엔드포인트는 백엔드에 맞게 조정
   return api.post('/api/auth/request', payload);
 }

@@ -5,70 +5,75 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from '../../screens/survey/QuestionWrapper';
+import type { PriorityKey } from '../../screens/survey/survey-context';
 import { useSurvey } from '../../screens/survey/survey-context';
 
 const PRIMARY = '#4E41FF';
-const ITEMS = ['경제상황 💵','가치관 🌱','관심분야 🌟','성격 🙂','성별 🚻','나이 🎂','경력 💼'] as const;
+
+/** UI 라벨 ↔ 저장키(PriorityKey) 명시적 매핑 */
+const ITEMS = [
+  { ui: '💵 경제상황 및 대인관계', key: '경제상황및대인관계' as PriorityKey },
+  { ui: '🌟 관심분야',             key: '관심분야' as PriorityKey },
+  { ui: '🙂 성격',                 key: '성격' as PriorityKey },
+  { ui: '🧠 흥미',                 key: '흥미' as PriorityKey },
+  { ui: '🚻 성별',                 key: '성별' as PriorityKey },
+  { ui: '🎂 나이',                 key: '나이' as PriorityKey },
+] as const;
+
 type Item = typeof ITEMS[number];
 const MAX = ITEMS.length;
-
-// 이모지/공백 제거 → '경제상황', '가치관' 형태
-const strip = (s: string) =>
-  s.replace(/[^\p{L}\p{N}\s]/gu, '').trim().replace(/\s+/g, '');
 
 export default function Q47PriorityScreen() {
   const { data, setField } = useSurvey();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isEdit = mode === 'edit';
 
-  // 기존 저장값(priorityOrder)이 있으면 그것을 기반으로 순서 복원
-  const restoreFromSaved = (): Item[] => {
-    if (!data.priorityOrder || data.priorityOrder.length === 0) return [];
-    // saved는 ['관심분야', '가치관', ...] 형식
-    const map = new Map(ITEMS.map((it) => [strip(it), it as Item]));
-    const restored: Item[] = [];
-    data.priorityOrder.forEach((lbl) => {
-      const it = map.get(strip(lbl));
-      if (it && !restored.includes(it)) restored.push(it);
-    });
-    return restored;
+  /** 저장값(priorityOrder)이 있으면 PriorityKey[] 그대로 복원 */
+  const restoreFromSaved = (): PriorityKey[] => {
+    const arr = Array.isArray(data.priorityOrder) ? data.priorityOrder : [];
+    const allowed = new Set(ITEMS.map(it => it.key));
+    const filtered = arr.filter(k => allowed.has(k));
+    // 중복 제거 + 최대 6개
+    const uniq: PriorityKey[] = [];
+    filtered.forEach(k => { if (!uniq.includes(k)) uniq.push(k); });
+    return uniq.slice(0, MAX);
   };
 
-  const [order, setOrder] = useState<Item[]>(restoreFromSaved);
+  /** 상태는 PriorityKey[]로 관리 (라벨 아님) */
+  const [orderKeys, setOrderKeys] = useState<PriorityKey[]>(restoreFromSaved);
 
-  // 안전 정리(중복/없는 값 제거)
+  // 안전 정리(중복/없음 제거)
   useEffect(() => {
-    setOrder((prev) => {
-      const filtered = prev.filter((v) => ITEMS.includes(v as Item)).slice(0, MAX);
-      const uniq: Item[] = [];
-      filtered.forEach((v) => { if (!uniq.includes(v)) uniq.push(v); });
+    setOrderKeys(prev => {
+      const allowed = new Set(ITEMS.map(it => it.key));
+      const filtered = prev.filter(k => allowed.has(k)).slice(0, MAX);
+      const uniq: PriorityKey[] = [];
+      filtered.forEach(k => { if (!uniq.includes(k)) uniq.push(k); });
       return uniq;
     });
   }, []);
 
-  const isSelected = (item: Item) => order.includes(item);
-  const getRank = (item: Item) => {
-    const idx = order.indexOf(item);
+  const isSelected = (key: PriorityKey) => orderKeys.includes(key);
+  const getRank = (key: PriorityKey) => {
+    const idx = orderKeys.indexOf(key);
     return idx === -1 ? null : idx + 1;
   };
 
-  const toggle = (item: Item) => {
-    setOrder((prev) => {
-      if (prev.includes(item)) return prev.filter((v) => v !== item);
+  const toggle = (key: PriorityKey) => {
+    setOrderKeys(prev => {
+      if (prev.includes(key)) return prev.filter(k => k !== key);
       if (prev.length >= MAX) return prev;
-      return [...prev, item];
+      return [...prev, key];
     });
   };
 
-  // 모든 항목을 선택해야 완료
-  const isValid = useMemo(() => order.length === ITEMS.length, [order]);
+  const isValid = useMemo(() => orderKeys.length === ITEMS.length, [orderKeys]);
 
   const onSave = () => {
     if (!isValid) return;
-    // 라벨만 저장 (이모지 제거)
-    const saved = order.map((it) => strip(it));
-    setField('priorityOrder', saved);
-    router.replace('/survey/confirm' as const); // 마지막 문항: 항상 확인 화면으로
+    console.log('[Q47] save priorityOrder:', orderKeys);
+    setField('priorityOrder', orderKeys);
+    router.replace('/survey/confirm' as const);
   };
 
   return (
@@ -76,7 +81,7 @@ export default function Q47PriorityScreen() {
       title="Q47. 아래 항목들 중, 진로 선택 시 자신에게 중요한 요소를 우선순위에 따라 번호로 매겨주세요."
       progressText="47/47"
       progressPct={100}
-      onNext={onSave}        // 하단 “확인”이 저장 트리거
+      onNext={onSave}
       disabled={!isValid}
     >
       <Text style={styles.sub}>
@@ -84,14 +89,14 @@ export default function Q47PriorityScreen() {
       </Text>
 
       <View style={styles.grid}>
-        {ITEMS.map((item) => {
-          const selected = isSelected(item);
-          const rank = getRank(item);
+        {ITEMS.map(({ ui, key }) => {
+          const selected = isSelected(key);
+          const rank = getRank(key);
           return (
             <TouchableOpacity
-              key={item}
+              key={key}
               activeOpacity={0.9}
-              onPress={() => toggle(item)}
+              onPress={() => toggle(key)}
               style={[styles.chip, selected && styles.chipActive]}
             >
               {selected && (
@@ -100,7 +105,7 @@ export default function Q47PriorityScreen() {
                 </View>
               )}
               <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                {item}
+                {ui}
               </Text>
             </TouchableOpacity>
           );
@@ -108,8 +113,8 @@ export default function Q47PriorityScreen() {
       </View>
 
       <Text style={styles.helper}>
-        {order.length < ITEMS.length
-          ? `선택됨: ${order.length}/${ITEMS.length} (모두 선택해주세요)`
+        {orderKeys.length < ITEMS.length
+          ? `선택됨: ${orderKeys.length}/${ITEMS.length} (모두 선택해주세요)`
           : '모든 항목을 순서대로 선택했습니다.'}
       </Text>
     </QuestionWrapper>

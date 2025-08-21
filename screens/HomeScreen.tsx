@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import {
@@ -76,6 +76,8 @@ export default function HomeScreen() {
                   style={styles.button}
                   activeOpacity={0.9}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  onPress={() => router.push('/result' as Href)}
+                  accessibilityRole="button"
                 >
                   <Image
                     source={require('../assets/images/map.png')}
@@ -105,7 +107,11 @@ export default function HomeScreen() {
         {/* 📍 로드맵 확인하기 */}
         <View style={styles.roadmapContainer}>
           <Text style={styles.sectionTitle}>📍 로드맵 확인하기</Text>
-          <TouchableOpacity style={styles.roadmapCard} activeOpacity={0.9}>
+          <TouchableOpacity 
+              style={styles.roadmapCard} 
+              activeOpacity={0.9}
+              onPress={() => router.push("/my-roadmap")}
+              >
             <Image
               source={require('../assets/images/front.png')}
               style={styles.roadmapImage}
