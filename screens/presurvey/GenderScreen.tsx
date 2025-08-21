@@ -37,17 +37,18 @@ export default function GenderScreen() {
   };
 
   const onNext = () => {
-    if (!value) { setError('질문에 응답해 주세요'); return; }
-    setError(null);
+  if (!value) { setError('질문에 응답해 주세요'); return; }
+  setError(null);
 
-    const clean =
-      value === '남자' ? '남자' :
-      value === '여자' ? '여자' :
-      '밝히고 싶지 않음';
+  const clean =
+    value === '남자' ? '남자' :
+    value === '여자' ? '여자' :
+    '밝히고 싶지 않음';
 
-    setData({ gender: clean });
-    goNext(ROUTES.education);
-  };
+  const code = clean === '남자' ? 1 : clean === '여자' ? 2 : 3;
+  setData({ gender: clean, genderCode: code }); // ⬅️ 코드 함께 저장
+  goNext(ROUTES.education);
+};
 
   return (
     <QuestionWrapper

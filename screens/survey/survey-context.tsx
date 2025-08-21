@@ -1,9 +1,10 @@
+// screens/survey/survey-context.tsx
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { TOTAL_QUESTIONS } from './questions';
 
 type Likert = 1 | 2 | 3 | 4 | 5;
 
-// ✅ Q47 허용 라벨(공백/이모지 제거된 저장형과 일치시키는 걸 권장)
+// ✅ Q47 허용 라벨(저장형 키)
 export type PriorityKey =
   | '나이'
   | '성별'
@@ -34,6 +35,42 @@ type Ctx = {
 
 const LIKERT_COUNT = 44;
 
+/** ──────────────────────────────────────────────────────────
+ *  Q47 라벨 정규화
+ *  - 공백/제로폭문자/일부 특수문자/이모지 제거
+ *  - '경제상황 및 대인관계' → '경제상황및대인관계'
+ *  - 허용 키 외 값은 null
+ *  ────────────────────────────────────────────────────────── */
+const allowedPriority: PriorityKey[] = [
+  '나이',
+  '성별',
+  '경제상황및대인관계',
+  '성격',
+  '흥미',
+  '관심분야',
+];
+
+const normalizePriorityLabel = (s: string): PriorityKey | null => {
+  if (!s) return null;
+  // 공백/제로폭 제거
+  let t = s.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+  // 이모지/기타 특수문자 제거(한글/숫자/영문/밑줄만 남김)
+  t = t.replace(/[^\w가-힣]/g, '');
+
+  // 공백 제거만 해도 대부분 해결됨
+  // 테이블 매핑(필요시 별칭 추가 가능)
+  const table: Record<string, PriorityKey> = {
+    '나이': '나이',
+    '성별': '성별',
+    '성격': '성격',
+    '흥미': '흥미',
+    '관심분야': '관심분야',
+    '경제상황및대인관계': '경제상황및대인관계', // '경제상황 및 대인관계' → 공백제거 후 키 일치
+  };
+
+  return table[t] ?? null;
+};
+
 const SurveyContext = createContext<Ctx | null>(null);
 
 export function SurveyProvider({ children }: { children: React.ReactNode }) {
@@ -55,18 +92,19 @@ export function SurveyProvider({ children }: { children: React.ReactNode }) {
     };
 
     const setField: Ctx['setField'] = (k, v) => {
-      // priorityOrder 타입 보강: 런타임에서도 안전하게 필터
       if (k === 'priorityOrder' && Array.isArray(v)) {
-        const allowed: PriorityKey[] = [
-          '나이',
-          '성별',
-          '경제상황및대인관계',
-          '성격',
-          '흥미',
-          '관심분야',
-        ];
-        const filtered = (v as PriorityKey[]).filter(x => allowed.includes(x));
-        setData(prev => ({ ...prev, [k]: filtered }));
+        // 1) 라벨 정규화 → 2) 허용 키 필터 → 3) 중복 제거 → 4) 최대 6개
+        const normalized = (v as string[])
+          .map(s => normalizePriorityLabel(s))
+          .filter((x): x is PriorityKey => !!x && allowedPriority.includes(x));
+
+        const dedup: PriorityKey[] = [];
+        normalized.forEach(x => {
+          if (!dedup.includes(x)) dedup.push(x);
+        });
+
+        const finalArr = dedup.slice(0, 6);
+        setData(prev => ({ ...prev, priorityOrder: finalArr }));
         return;
       }
       setData(prev => ({ ...prev, [k]: v }));
@@ -80,9 +118,7 @@ export function SurveyProvider({ children }: { children: React.ReactNode }) {
         priorityOrder: undefined,
       });
 
-    // (선택) 제출 전 검증: 필요 시 Confirm 화면에서 사용
     const validate: Ctx['validate'] = () => {
-      // Likert 최소 응답 여부만 체크하고, 나머지는 Confirm에서 추가 검증 가능
       const allLikertAnswered = (data.likert ?? []).every(v => v !== null);
       if (!allLikertAnswered) {
         return { ok: false, reason: '성격/흥미 문항(1~44)을 모두 선택해 주세요.' };
