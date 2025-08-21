@@ -107,7 +107,11 @@ export default function HomeScreen() {
         {/* 📍 로드맵 확인하기 */}
         <View style={styles.roadmapContainer}>
           <Text style={styles.sectionTitle}>📍 로드맵 확인하기</Text>
-          <TouchableOpacity style={styles.roadmapCard} activeOpacity={0.9}>
+          <TouchableOpacity 
+              style={styles.roadmapCard} 
+              activeOpacity={0.9}
+              onPress={() => router.push("/my-roadmap")}
+              >
             <Image
               source={require('../assets/images/front.png')}
               style={styles.roadmapImage}

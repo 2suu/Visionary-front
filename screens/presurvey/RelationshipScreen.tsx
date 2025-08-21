@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QuestionWrapper from './components/QuestionWrapper';
-import { ROUTES, useSurvey } from './survey-context';
+import { REL_FREQ_CODE, REL_STYLE_CODE, ROUTES, useSurvey } from './survey-context';
 
 const PRIMARY = '#4E41FF';
 const Q1_OPTIONS = ['없음', '보통', '활발'] as const;
@@ -40,20 +40,27 @@ export default function RelationshipScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const onNext = () => {
-    if (q1 === null || q2 === null) {
-      setError('질문에 응답해 주세요.');
-      return;
-    }
-    setError(null);
+  if (q1 === null || q2 === null) {
+    setError('질문에 응답해 주세요.');
+    return;
+  }
+  setError(null);
 
-    // ✅ Context 저장
-    setData({
-      relationFreq: Q1_OPTIONS[q1],
-      relationStyle: Q2_OPTIONS[q2].label,
-    });
+  const freq = Q1_OPTIONS[q1]; // '없음' | '보통' | '활발'
+  const style = Q2_OPTIONS[q2].label; // '깊고 좁게' | '넓고 얕게'
 
-    goNext(ROUTES.mood);
-  };
+  const relationFreqCode = freq === '없음' ? 1 : freq === '보통' ? 3 : 5;
+  const relationStyleCode = style === '깊고 좁게' ? 1 : 2;
+
+  setData({
+  relationFreq: Q1_OPTIONS[q1],
+  relationStyle: Q2_OPTIONS[q2].label,
+  relationFreqCode: REL_FREQ_CODE[Q1_OPTIONS[q1]],
+  relationStyleCode: REL_STYLE_CODE[Q2_OPTIONS[q2].label],
+  });
+
+  goNext(ROUTES.mood);
+};
 
   return (
     <QuestionWrapper
