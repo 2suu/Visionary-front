@@ -14,12 +14,9 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const TOPBAR_H = 44;   // 상단바 높이
-  const GAP = 8;        // 상단바와 콘텐츠 사이 여백
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
-      {/* 시계(상태바) 아래로 바로 붙도록 */}
       <StatusBar style="dark" translucent backgroundColor="transparent" />
 
       {/* ⬆ 상단바 아이콘 3개 */}
@@ -39,10 +36,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView
-          contentContainerStyle={[
-          styles.container,
-          { paddingTop: insets.top }  // ← 여기만 추가/수정
-        ]}
+        contentContainerStyle={[styles.container, { paddingTop: insets.top }]}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
@@ -59,19 +53,18 @@ export default function HomeScreen() {
             {/* ▶ 버튼 + 캐릭터 수평 정렬 */}
             <View style={styles.heroRow}>
               <View style={styles.buttonColumn}>
+                {/* 설문조사하기 */}
                 <TouchableOpacity
                   style={styles.button}
                   onPress={() => router.push('/presurvey/intro')}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   activeOpacity={0.9}
                 >
-                  <Image
-                    source={require('../assets/images/compass.png')}
-                    style={styles.icon}
-                  />
-                  <Text style={styles.buttonText}>설문조사진행</Text>
+                  <Image source={require('../assets/images/compass.png')} style={styles.icon} />
+                  <Text style={styles.buttonText}>설문조사하기</Text>
                 </TouchableOpacity>
 
+                {/* 설문조사결과 */}
                 <TouchableOpacity
                   style={styles.button}
                   activeOpacity={0.9}
@@ -79,11 +72,20 @@ export default function HomeScreen() {
                   onPress={() => router.push('/result' as Href)}
                   accessibilityRole="button"
                 >
-                  <Image
-                    source={require('../assets/images/map.png')}
-                    style={styles.icon}
-                  />
-                  <Text style={styles.buttonText}>설문결과확인</Text>
+                  <Image source={require('../assets/images/light.png')} style={styles.icon} />
+                  <Text style={styles.buttonText}>설문조사결과</Text>
+                </TouchableOpacity>
+
+                {/* 마이 로드맵 */}
+                <TouchableOpacity
+                  style={styles.button}
+                  activeOpacity={0.9}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  onPress={() => router.push('/career-recommendations' as Href)}
+                  accessibilityRole="button"
+                >
+                  <Image source={require('../assets/images/map.png')} style={styles.icon} />
+                  <Text style={styles.buttonText}>맞춤형직업추천</Text>
                 </TouchableOpacity>
               </View>
 
@@ -107,40 +109,35 @@ export default function HomeScreen() {
         {/* 📍 로드맵 확인하기 */}
         <View style={styles.roadmapContainer}>
           <Text style={styles.sectionTitle}>📍 로드맵 확인하기</Text>
-          <TouchableOpacity 
-              style={styles.roadmapCard} 
-              activeOpacity={0.9}
-              onPress={() => router.push("/my-roadmap")}
-              >
-            <Image
-              source={require('../assets/images/front.png')}
-              style={styles.roadmapImage}
-            />
+
+          <TouchableOpacity
+            style={styles.roadmapCard}
+            activeOpacity={0.9}
+            onPress={() => router.push('/my-roadmap')}
+          >
+            <Image source={require('../assets/images/front.png')} style={styles.roadmapImage} />
             <View style={styles.roadmapTextBox}>
               <Text style={styles.roadmapStep}>💡 first RoadMap</Text>
               <Text style={styles.roadmapTitle}>      프론트엔드 개발자가 되려면</Text>
             </View>
           </TouchableOpacity>
 
-            {/* Step 2 */}
-            <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
-              <Image source={require('../assets/images/back.png')} style={styles.roadmapImage} />
-              <View style={styles.roadmapTextBox}>
-                <Text style={styles.roadmapStep}>💡 Second RoadMap</Text>
-                <Text style={styles.roadmapTitle}>      백엔드 개발자가 되려면</Text>
-              </View>
-            </TouchableOpacity>
+          <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
+            <Image source={require('../assets/images/back.png')} style={styles.roadmapImage} />
+            <View style={styles.roadmapTextBox}>
+              <Text style={styles.roadmapStep}>💡 Second RoadMap</Text>
+              <Text style={styles.roadmapTitle}>      백엔드 개발자가 되려면</Text>
+            </View>
+          </TouchableOpacity>
 
- {/* Step 2 */}
-            <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
-              <Image source={require('../assets/images/analysis.png')} style={styles.roadmapImage} />
-              <View style={styles.roadmapTextBox}>
-                <Text style={styles.roadmapStep}>💡 Third RoadMap</Text>
-                <Text style={styles.roadmapTitle}>      데이터 분석가가 되려면</Text>
-              </View>
-            </TouchableOpacity>
-
-          </View>
+          <TouchableOpacity style={[styles.roadmapCard, { marginTop: 16 }]} activeOpacity={0.9}>
+            <Image source={require('../assets/images/analysis.png')} style={styles.roadmapImage} />
+            <View style={styles.roadmapTextBox}>
+              <Text style={styles.roadmapStep}>💡 Third RoadMap</Text>
+              <Text style={styles.roadmapTitle}>      데이터 분석가가 되려면</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -168,7 +165,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     resizeMode: 'contain',
-    tintColor: '#333', // 필요 시 아이콘 색상 통일
+    tintColor: '#333',
   },
 
   heroContainer: {
@@ -177,9 +174,9 @@ const styles = StyleSheet.create({
   },
 
   heroCircle: {
-    width: 300,
-    height: 300,
-    borderRadius: 150,
+    width: 320,       // ← 3개 버튼 위해 살짝 키움
+    height: 320,
+    borderRadius: 160,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -201,7 +198,7 @@ const styles = StyleSheet.create({
   buttonColumn: {
     marginRight: 1,
     justifyContent: 'center',
-    transform: [{ translateX: 15 }],  // ← 오른쪽으로 8px 밀기
+    transform: [{ translateX: 15 }],
   },
 
   button: {
@@ -230,7 +227,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: '#333',
-    alignItems: 'center'
   },
 
   character: {
@@ -306,15 +302,15 @@ const styles = StyleSheet.create({
     color: '#4E41FF',
     fontWeight: 'bold',
     marginBottom: 4,
-    textAlign: 'left',        // ⬅️ 왼쪽 정렬
-    alignSelf: 'flex-start',  // ⬅️ 컨테이너 안에서도 왼쪽 시작
+    textAlign: 'left',
+    alignSelf: 'flex-start',
   },
 
   roadmapTitle: {
     fontSize: 15,
     fontWeight: '500',
     color: '#333',
-    textAlign: 'left',        // ⬅️ 왼쪽 정렬
-    alignSelf: 'flex-start',  // ⬅️ 컨테이너 안에서도 왼쪽 시작
+    textAlign: 'left',
+    alignSelf: 'flex-start',
   },
 });
