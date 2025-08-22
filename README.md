@@ -1,50 +1,41 @@
-# Welcome to your Expo app 👋
+# 📱 Visionary Front
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AI 기반 진로 추천 및 로드맵 제공 애플리케이션의 프론트엔드 프로젝트입니다.  
+React Native + Expo 기반으로 구현되었으며, 설문을 통해 사용자의 성향을 분석하고 맞춤형 진로를 추천합니다.
 
-## Get started
+---
 
-1. Install dependencies
+## 📋 기술 스택
 
+- **Frontend**: React Native (Expo)
+- **State Management**: Zustand, Context API
+- **UI**: React Native Paper, Tailwind
+- **API 연동**: Fetch 기반 REST API
+- **배포**: Expo EAS Build
+
+---
+
+## 🚀 실행 방법 (Frontend)
+
+### 1. 환경 준비
+1. **Node.js** 설치 (권장: LTS 버전)  
+   👉 [Node.js 공식 사이트](https://nodejs.org/)  
+2. **Expo CLI** 설치  
    ```bash
-   npm install
-   ```
+   npm install -g expo-cli
+3. 프로젝트 폴더로 이동
+   cd Visionary-front
 
-2. Start the app
+### 2. 의존성 설치
+npm install
+# 또는
+yarn install
 
-   ```bash
-   npx expo start
-   ```
+### 3. 환경 변수 설정
+프로젝트 루트에 .env 파일 생성 후 API 서버 주소 입력:
+EXPO_PUBLIC_API_BASE=http://localhost:8080
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 4. 실행하기
+npx expo start
+npx expo start--tunnel
+   
