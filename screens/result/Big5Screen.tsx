@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -11,6 +12,7 @@ const CHART_W = width - CARD_HPAD * 2 - INNER_GAP; // 차트 가로
 const BAR_W = CHART_W; // 막대 트랙 가로도 차트와 동일하게
 
 export default function Big5Screen() {
+  const router = useRouter();
   const big5 = useMemo(() => ({ O: 75, C: 85, E: 85, A: 85, N: 85 }), []);
 
   const chartData = {
@@ -23,9 +25,9 @@ export default function Big5Screen() {
     ],
   };
 
-  const handleReAnalyze = () => {
-    // 다시 분석 버튼 클릭 시 동작
-    console.log('다시 분석하기');
+  const handleNext = () => {
+    console.log('[BIG5][UI] navigate to interest screen');
+    router.push('/result/interest');
   };
 
   return (
@@ -77,7 +79,7 @@ export default function Big5Screen() {
       </Text>
 
       {/* 버튼 영역 */}
-      <TouchableOpacity style={styles.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.button} onPress={handleNext} activeOpacity={0.8}>
         <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
     </View>

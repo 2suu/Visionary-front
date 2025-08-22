@@ -1,4 +1,5 @@
 // screens/result/SummaryScreen.tsx
+import { useRouter } from "expo-router";
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -7,6 +8,8 @@ const BOX_BG = '#F6F7FF';
 const GRAY = '#6A6A76';
 
 export default function SummaryScreen() {
+  const router = useRouter();
+  
   // TODO: 실제 데이터 바인딩 (컨텍스트/서버 값으로 교체)
   const hiring = [
     '문제 정의→해결안 도출 흐름이 명확함',
@@ -44,9 +47,9 @@ export default function SummaryScreen() {
   const finalParagraph =
     '직무 적합도는 "표현/대인 상호작용 + 체계적 실행"이 핵심입니다. 교육·콘텐츠 기획/운영, UX리서치, 에듀테크 PM/PO 등에서 강점을 보일 가능성이 높습니다. KPI 기반의 목표관리 루틴을 도입하면 성과와 만족도가 함께 상승할 것입니다.';
 
-  const handleReAnalyze = () => {
-    // 종합 분석 다시 분석 버튼 클릭 시 동작
-    console.log('종합 분석 다시 분석하기');
+  const handleNext = () => {
+    console.log('[SUMMARY][UI] navigate to career recommendations');
+    router.push('/career-recommendations');
   };
 
   return (
@@ -95,7 +98,7 @@ export default function SummaryScreen() {
       </Section>
 
       {/* 버튼 영역 */}
-      <TouchableOpacity style={styles.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.button} onPress={handleNext} activeOpacity={0.8}>
         <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
     </View>

@@ -1,4 +1,5 @@
 // screens/result/EmotionValuesScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -94,6 +95,7 @@ function ProgressBar({ pct }: { pct: number }) {
  *  메인 스크린
  *  ──────────────────────────────────────────────────────────── */
 export default function EmotionValuesScreen() {
+  const router = useRouter();
   const data = sample; // ← useContext(...)로 교체해도 됨
 
   const top3 = useMemo(
@@ -101,15 +103,20 @@ export default function EmotionValuesScreen() {
     [data.priority]
   );
 
-  const handleReAnalyze = () => {
-    // 다시 분석 버튼 클릭 시 동작
-    console.log('정서/가치관 다시 분석하기');
+  const handleNext = () => {
+    console.log('[EMOTION][UI] navigate to values screen');
+    router.push('/result/values');
   };
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.content}>
       <Text style={s.title}>정서/가치관 분석</Text>
-    
+      
+      {/* 상단 소탭 표시 */}
+      <View style={s.subTab}>
+        <View style={s.subTabIndicator} />
+        <Text style={s.subTabText}>정서분석</Text>
+      </View>
 
       {/* 가치관 우선순위 */}
       <Text style={s.sectionTitle}>가치관 우선순위</Text>
@@ -152,7 +159,7 @@ export default function EmotionValuesScreen() {
       </View>
 
       {/* 버튼 영역 */}
-      <TouchableOpacity style={s.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+      <TouchableOpacity style={s.button} onPress={handleNext} activeOpacity={0.8}>
         <Text style={s.buttonText}>다음</Text>
       </TouchableOpacity>
 
@@ -174,6 +181,11 @@ const s = StyleSheet.create({
   tab: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, fontSize: 12 },
   tabActive: { backgroundColor: '#EEF0FF', color: PRIMARY, fontWeight: '700' },
   tabDim: { backgroundColor: '#F4F5F7', color: '#6B7280' },
+
+  // 서브탭 스타일
+  subTab: { marginTop: 6, marginBottom: 12 },
+  subTabIndicator: { height: 2, backgroundColor: PRIMARY, width: 42, borderRadius: 2 },
+  subTabText: { marginTop: 8, color: '#6A6A76' },
 
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111', marginTop: 12, marginBottom: 10 },
 
