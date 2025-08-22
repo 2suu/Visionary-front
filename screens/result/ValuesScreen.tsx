@@ -1,6 +1,6 @@
 // screens/result/SummaryScreen.tsx
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const PRIMARY = '#4E41FF';
 const BOX_BG = '#F6F7FF';
@@ -42,11 +42,22 @@ export default function SummaryScreen() {
   ];
 
   const finalParagraph =
-    '직무 적합도는 “표현/대인 상호작용 + 체계적 실행”이 핵심입니다. 교육·콘텐츠 기획/운영, UX리서치, 에듀테크 PM/PO 등에서 강점을 보일 가능성이 높습니다. KPI 기반의 목표관리 루틴을 도입하면 성과와 만족도가 함께 상승할 것입니다.';
+    '직무 적합도는 "표현/대인 상호작용 + 체계적 실행"이 핵심입니다. 교육·콘텐츠 기획/운영, UX리서치, 에듀테크 PM/PO 등에서 강점을 보일 가능성이 높습니다. KPI 기반의 목표관리 루틴을 도입하면 성과와 만족도가 함께 상승할 것입니다.';
+
+  const handleReAnalyze = () => {
+    // 종합 분석 다시 분석 버튼 클릭 시 동작
+    console.log('종합 분석 다시 분석하기');
+  };
 
   return (
     <View style={styles.card}>
       <Text style={styles.title}>종합 분석</Text>
+
+      {/* 상단 소탭 표시 */}
+      <View style={styles.subTab}>
+        <View style={styles.subTabIndicator} />
+        <Text style={styles.subTabText}>종합분석</Text>
+      </View>
 
       {/* 채용 인사이트 */}
       <Section title="채용 인사이트">
@@ -82,6 +93,11 @@ export default function SummaryScreen() {
       <Section title="종합 분석 결과">
         <Text style={styles.paragraph}>{finalParagraph}</Text>
       </Section>
+
+      {/* 버튼 영역 */}
+      <TouchableOpacity style={styles.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+        <Text style={styles.buttonText}>다음</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -162,6 +178,10 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: '800', marginBottom: 6 },
 
+  subTab: { marginTop: 6, marginBottom: 12 },
+  subTabIndicator: { height: 2, backgroundColor: PRIMARY, width: 42, borderRadius: 2 },
+  subTabText: { marginTop: 8, color: GRAY },
+
   h2: { fontSize: 15, fontWeight: '800', marginBottom: 6 },
   paragraph: { color: GRAY, lineHeight: 20 },
 
@@ -196,4 +216,24 @@ const styles = StyleSheet.create({
   },
   tipTitle: { fontWeight: '800', marginBottom: 4 },
   tipDesc: { color: GRAY },
+
+  // 버튼 스타일
+  button: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

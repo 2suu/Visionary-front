@@ -1,6 +1,6 @@
 // screens/result/EmotionValuesScreen.tsx
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /** ─────────────────────────────────────────────────────────────
  *  데이터 예시(실서비스에서는 props/context 연동)
@@ -101,6 +101,11 @@ export default function EmotionValuesScreen() {
     [data.priority]
   );
 
+  const handleReAnalyze = () => {
+    // 다시 분석 버튼 클릭 시 동작
+    console.log('정서/가치관 다시 분석하기');
+  };
+
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.content}>
       <Text style={s.title}>정서/가치관 분석</Text>
@@ -145,6 +150,11 @@ export default function EmotionValuesScreen() {
         <Text style={s.blockTitle}>특징 분석</Text>
         <Text style={s.desc}>{data.summary.feature}</Text>
       </View>
+
+      {/* 버튼 영역 */}
+      <TouchableOpacity style={s.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+        <Text style={s.buttonText}>다음</Text>
+      </TouchableOpacity>
 
       {/* 하단 여백 */}
       <View style={{ height: 40 }} />
@@ -228,4 +238,24 @@ const s = StyleSheet.create({
   blockTitle: { fontSize: 13, fontWeight: '700', color: '#111', marginBottom: 6 },
   dotText: { fontSize: 13, color: '#111' },
   desc: { marginTop: 2, fontSize: 13, color: '#383A40', lineHeight: 19 },
+
+  // 버튼 스타일
+  button: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

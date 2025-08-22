@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
 const PRIMARY = '#4E41FF';
@@ -21,6 +21,11 @@ export default function Big5Screen() {
         // LineChart에서는 color를 chartConfig.color가 처리하므로 여기선 생략 가능
       },
     ],
+  };
+
+  const handleReAnalyze = () => {
+    // 다시 분석 버튼 클릭 시 동작
+    console.log('다시 분석하기');
   };
 
   return (
@@ -70,6 +75,11 @@ export default function Big5Screen() {
         성실성과 외향성이 높아 협업과 리더십에서 강점을 보입니다. 안정적인 환경에서 목표를
         꾸준히 이루며, 타인을 존중하고 과제를 체계적으로 수행하는 편입니다.
       </Text>
+
+      {/* 버튼 영역 */}
+      <TouchableOpacity style={styles.button} onPress={handleReAnalyze} activeOpacity={0.8}>
+        <Text style={styles.buttonText}>다음</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -143,4 +153,24 @@ const styles = StyleSheet.create({
 
   sectionH2: { fontSize: 16, fontWeight: '800', marginTop: 18, marginBottom: 6 },
   summary: { color: '#4B5563', lineHeight: 20 },
+
+  // 버튼 스타일
+  button: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
