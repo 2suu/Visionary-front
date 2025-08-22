@@ -24,18 +24,23 @@ React Native + Expo 기반으로 구현되었으며, 설문을 통해 사용자�
    ```bash
    npm install -g expo-cli
 3. 프로젝트 폴더로 이동
+   ```bash
    cd Visionary-front
 
 ### 2. 의존성 설치
+```bash
 npm install
 # 또는
+```bash
 yarn install
 
 ### 3. 환경 변수 설정
 프로젝트 루트에 .env 파일 생성 후 API 서버 주소 입력:
+```bash
 EXPO_PUBLIC_API_BASE=http://localhost:8080
 
 ### 4. 실행하기
+```bash
 npx expo start
 npx expo start--tunnel
    
