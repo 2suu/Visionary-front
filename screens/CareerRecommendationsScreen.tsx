@@ -1,4 +1,5 @@
 // screens/CareerRecommendationsScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { memo } from "react";
 import {
   Animated,
@@ -252,6 +253,7 @@ const CardList = memo(function CardList({
 export default function CareerRecommendationsScreen(
   props: Partial<CareerRecommendationsProps>
 ) {
+  const router = useRouter();
   const userName = props.userName ?? "헬로샌디";
   const [selectedItemId, setSelectedItemId] = React.useState<string | number | null>(null);
 
@@ -317,6 +319,19 @@ export default function CareerRecommendationsScreen(
     props.onPressItem?.(item);
   };
 
+  const handleConfirm = () => {
+    if (selectedItemId) {
+      const selectedJob = data.find(item => item.id === selectedItemId);
+      console.log('[CAREER][UI] navigate to roadmap =>', { 
+        selectedJobId: selectedItemId, 
+        jobTitle: selectedJob?.title 
+      });
+      
+      // 로드맵 화면으로 이동
+      router.push('/roadmap');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <SectionHeader onBack={props.onBack} />
@@ -346,12 +361,7 @@ export default function CareerRecommendationsScreen(
               styles.confirmButton,
               !selectedItemId && styles.confirmButtonDisabled
             ]}
-            onPress={() => {
-              if (selectedItemId) {
-                console.log("로드맵 생성:", selectedItemId);
-                // 여기에 로드맵 생성 로직 추가
-              }
-            }}
+            onPress={handleConfirm}
             disabled={!selectedItemId}
           >
             <Text style={[

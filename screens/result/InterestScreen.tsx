@@ -1,6 +1,7 @@
 // screens/result/InterestScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
 const PRIMARY = '#4E41FF';
@@ -19,7 +20,7 @@ const BAR_W = CHART_W;
 type InterestKey = 'R' | 'I' | 'A' | 'S' | 'E' | 'C'; // RIASEC
 
 export default function InterestScreen() {
-  // 예시 데이터 (서버 값으로 교체)
+  const router = useRouter();
   const riasec = useMemo(
     () => ({ R: 75, I: 60, A: 90, S: 90, E: 50, C: 40 }),
     []
@@ -29,6 +30,11 @@ export default function InterestScreen() {
   const chartData = {
     labels,
     datasets: [{ data: [riasec.R, riasec.I, riasec.A, riasec.S, riasec.E, riasec.C] }],
+  };
+
+  const handleNext = () => {
+    console.log('[INTEREST][UI] navigate to emotion screen');
+    router.push('/result/emotion');
   };
 
   return (
@@ -132,6 +138,11 @@ export default function InterestScreen() {
         직관적이고 공감 능력이 뛰어나며, 문제를 창의적으로 해결하는 편입니다. 탐구형 성향도 있어
         분석적 접근을 곁들인 콘텐츠/교육/디자인 관련 직무에서 만족도가 높을 수 있습니다.
       </Text>
+
+      {/* 버튼 영역 */}
+      <TouchableOpacity style={styles.button} onPress={handleNext} activeOpacity={0.8}>
+        <Text style={styles.buttonText}>다음</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -177,7 +188,7 @@ function TagPill({ text, color }: { text: string; color: string }) {
 }
 
 function BarRow({ label, value }: { label: string; value: number }) {
-  const dotLeftRaw = (BAR_W * value) / 100 - 8; // 점 반지름 보정
+  const dotLeftRaw = (BAR_W * value) / 100 - 8;
   const dotLeft = Math.max(-2, Math.min(BAR_W - 14, dotLeftRaw));
 
   return (
@@ -221,7 +232,7 @@ const styles = StyleSheet.create({
   },
   catCard: {
     flexGrow: 1,
-    minWidth: (CHART_W - 12) / 2, // 2열 그리드
+    minWidth: (CHART_W - 12) / 2,
     borderWidth: 1.2,
     borderRadius: 12,
     padding: 12,
@@ -235,7 +246,6 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 12, fontWeight: '600' },
 
-  // 바 그래프
   barTrack: {
     height: 10,
     backgroundColor: '#EFEFF4',
@@ -262,4 +272,23 @@ const styles = StyleSheet.create({
 
   sectionH2: { fontSize: 16, fontWeight: '800', marginTop: 20, marginBottom: 6 },
   summary: { color: '#4B5563', lineHeight: 20 },
+
+  button: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

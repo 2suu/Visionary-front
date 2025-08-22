@@ -1,6 +1,7 @@
 // screens/result/EmotionValuesScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /** ─────────────────────────────────────────────────────────────
  *  데이터 예시(실서비스에서는 props/context 연동)
@@ -94,6 +95,7 @@ function ProgressBar({ pct }: { pct: number }) {
  *  메인 스크린
  *  ──────────────────────────────────────────────────────────── */
 export default function EmotionValuesScreen() {
+  const router = useRouter();
   const data = sample; // ← useContext(...)로 교체해도 됨
 
   const top3 = useMemo(
@@ -101,10 +103,20 @@ export default function EmotionValuesScreen() {
     [data.priority]
   );
 
+  const handleNext = () => {
+    console.log('[EMOTION][UI] navigate to values screen');
+    router.push('/result/values');
+  };
+
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.content}>
       <Text style={s.title}>정서/가치관 분석</Text>
-    
+      
+      {/* 상단 소탭 표시 */}
+      <View style={s.subTab}>
+        <View style={s.subTabIndicator} />
+        <Text style={s.subTabText}>정서분석</Text>
+      </View>
 
       {/* 가치관 우선순위 */}
       <Text style={s.sectionTitle}>가치관 우선순위</Text>
@@ -146,6 +158,11 @@ export default function EmotionValuesScreen() {
         <Text style={s.desc}>{data.summary.feature}</Text>
       </View>
 
+      {/* 버튼 영역 */}
+      <TouchableOpacity style={s.button} onPress={handleNext} activeOpacity={0.8}>
+        <Text style={s.buttonText}>다음</Text>
+      </TouchableOpacity>
+
       {/* 하단 여백 */}
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -164,6 +181,11 @@ const s = StyleSheet.create({
   tab: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, fontSize: 12 },
   tabActive: { backgroundColor: '#EEF0FF', color: PRIMARY, fontWeight: '700' },
   tabDim: { backgroundColor: '#F4F5F7', color: '#6B7280' },
+
+  // 서브탭 스타일
+  subTab: { marginTop: 6, marginBottom: 12 },
+  subTabIndicator: { height: 2, backgroundColor: PRIMARY, width: 42, borderRadius: 2 },
+  subTabText: { marginTop: 8, color: '#6A6A76' },
 
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111', marginTop: 12, marginBottom: 10 },
 
@@ -228,4 +250,24 @@ const s = StyleSheet.create({
   blockTitle: { fontSize: 13, fontWeight: '700', color: '#111', marginBottom: 6 },
   dotText: { fontSize: 13, color: '#111' },
   desc: { marginTop: 2, fontSize: 13, color: '#383A40', lineHeight: 19 },
+
+  // 버튼 스타일
+  button: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: PRIMARY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
