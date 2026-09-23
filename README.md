@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="visionary" src="https://github.com/user-attachments/assets/efb8dc8e-4ccf-4955-9dc6-b4ce7dcd8203" />
+
 # 📱 Visionary Front
 
 AI 기반 진로 추천 및 로드맵 제공 애플리케이션의 프론트엔드 프로젝트입니다.  
